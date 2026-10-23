@@ -3620,12 +3620,19 @@ function recordVisitDates(r){
   if(!out.length) push(parseAnyDate(r.doingDateTime || r.timestamp));
   return out;
 }
-/* every dated activity of a record — ALL steps (Done/Appointment/Labo too), first procedure, next-step date, record time */
+/* dated PROCEDURE activity of a record — used for "today / yesterday" counts and filters.
+   Only steps that are real procedures (Done / Labo / any procedure step) count, each on its OWN date.
+   Appointment steps, the next-appointment date (timeLast) and the record's creation time do NOT count.
+   Old records with no steps at all fall back to doingDateTime / timestamp. */
 function recordActivityDates(r){
   const out = [];
   const push = v => { const d = parseAnyDate(v); if(d) out.push(d); };
-  stepsArray(r).forEach(st => push(st.datetime));
-  push(r.doingDateTime); push(r.timeLast); push(r.timestamp);
+  const st = stepsArray(r);
+  if(st.length){
+    st.forEach(s => { if(stepKind(s.name) !== 'appt') push(s.datetime); });
+  } else {
+    push(r.doingDateTime || r.timestamp);
+  }
   return out;
 }
 function recordVisitedWhere(r, test){ return recordVisitDates(r).some(test); }
@@ -3665,9 +3672,11 @@ function getAppointments(){
 
   /* Appointments — same rule as the Appointments page (one per patient, Done skipped) */
   const todayList = [];
-  groupRecordsByPatient().forEach(list=>{
+  const latestStatusByPatient = new Map();
+  groupRecordsByPatient().forEach((list, k)=>{
+    latestStatusByPatient.set(k, patientLatestStatus(list));
     const it = patientActiveAppt(list);
-    if(it && inRange(it.d)) todayList.push(it);
+    if(it && inRange(it.d)){ it.status = latestStatusByPatient.get(k); todayList.push(it); }
   });
   todayList.sort((a,b)=>a.d - b.d);
 
@@ -3684,11 +3693,11 @@ function getAppointments(){
         /* every step dated in the window is an activity (Done / Labo included);
            an Appointment step only counts when its date is today (future ones stay in Appointments) */
         if(k === 'appt' && !sameDay(dt, now)) return;
-        todayProcList.push({r, d: dt, stepName: step.name});
+        todayProcList.push({r, d: dt, stepName: step.name, stepNote: step.note, status: latestStatusByPatient.get(patientKey(r))});
       });
     } else {
       const dt = parseAnyDate(r.doingDateTime || r.timestamp);
-      if(inRange(dt)) todayProcList.push({r, d: dt});
+      if(inRange(dt)) todayProcList.push({r, d: dt, status: latestStatusByPatient.get(patientKey(r))});
     }
   });
   todayProcList.sort((a,b)=>b.d - a.d);
@@ -3713,6 +3722,21 @@ function dashDayLabel(d){
   return tag ? `<span class="appt-daytag kh ${cls}">${tag}</span><br>${ds}` : ds;
 }
 
+/* Status chip (latest status of the patient) + note, shared by both Schedule panels */
+function scheduleBadgeHTML(item, noteText){
+  const st = item.status;
+  const note = cleanStr(noteText);
+  if(!st) return `📋 ${esc(noteText)}`;
+  /* format: Status (latest) - note — no date / time */
+  return `<span style="font-weight:800;">${esc(st.label)}</span>${note ? ` - <span style="font-weight:600;">${esc(note)}</span>` : ''}`;
+}
+function scheduleBadgeStyle(item, fallback){
+  const st = item.status;
+  if(!st) return fallback;
+  const today0 = new Date(); today0.setHours(0,0,0,0);
+  return STATUS_BADGE_STYLES[statusBadgeKey(st.kind, st.d, today0)] + 'max-width:none;white-space:normal;';
+}
+
 function renderApptRow(item){
   const {r,d} = item;
   const timeStr = dashTimeStr(d);
@@ -3729,8 +3753,8 @@ function renderApptRow(item){
         <div class="appt-name kh">${r.name}</div>
         <div class="appt-meta">${formatPhoneDisplay(r.phone)||'no phone'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>
       </div>
-      <div class="appt-plan-badge kh" title="Plan DO: ${planText}">
-        📋 ${planText}
+      <div class="appt-plan-badge kh" style="${scheduleBadgeStyle(item, '')}" title="Status: ${item.status ? esc(item.status.label) : ''} · Plan DO: ${esc(planText)}">
+        ${scheduleBadgeHTML(item, planText)}
       </div>
     </div>`;
 }
@@ -3739,7 +3763,7 @@ function renderProcRow(item){
   const {r,d} = item;
   const timeStr = dashTimeStr(d);
   const dayStr = dashDayLabel(d);
-  const planText = cleanStr(item.stepName) || cleanStr(r.doing) || cleanStr(r.treatment) || cleanStr(r.diagnosis) || 'ពិនិត្យព្យាបាល';
+  const planText = cleanStr(item.stepNote) || cleanStr(item.stepName) || cleanStr(r.doing) || cleanStr(r.treatment) || cleanStr(r.diagnosis) || 'ពិនិត្យព្យាបាល';
 
   return `
     <div class="appt-row" data-name="${encodeURIComponent(r.name)}">
@@ -3751,8 +3775,8 @@ function renderProcRow(item){
         <div class="appt-name kh">${r.name}</div>
         <div class="appt-meta">${formatPhoneDisplay(r.phone)||'គ្មានលេខ'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>
       </div>
-      <div class="appt-plan-badge kh" style="background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(26,107,219,0.4);" title="Procedure: ${planText}">
-        📋 ${planText}
+      <div class="appt-plan-badge kh" style="${scheduleBadgeStyle(item, 'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(26,107,219,0.4);')}" title="Status: ${item.status ? esc(item.status.label) : ''} · Procedure: ${esc(planText)}">
+        ${scheduleBadgeHTML(item, planText)}
       </div>
     </div>`;
 }
@@ -4492,29 +4516,61 @@ function renderList(){
   applyListRowLimits();
 }
 
-/* colour state of a patient = the status of the step with the LATEST date (any record of the patient) */
-function getPatientLatestState(p, startOfToday){
+/* LATEST step of a patient across all of their records.
+   Ordered by date + hour + minute; if two steps share the exact same minute the newer record
+   (then the later step in the list) wins. */
+function patientLatestStep(list){
   let best = null;
-  p.list.forEach(r => stepsArray(r).forEach(st => {
-    const d = parseAnyDate(st.datetime);
-    if(!d) return;
-    if(!best || d.getTime() >= best.d.getTime()) best = { d, kind: stepKind(st.name) };
-  }));
+  list.forEach(r => {
+    const rd = parseAnyDate(r.timestamp);
+    const rt = rd ? rd.getTime() : 0;
+    stepsArray(r).forEach((st, i) => {
+      const d = parseAnyDate(st.datetime);
+      if(!d) return;
+      const t = d.getTime();
+      if(!best || t > best.t || (t === best.t && (rt > best.rt || (rt === best.rt && i >= best.i)))){
+        best = { r, step: st, d, t, rt, i, kind: stepKind(st.name) };
+      }
+    });
+  });
+  return best;
+}
+/* latest status of a patient: { label, kind, d, note } — kind: done | appt | labo | normal | missing */
+function patientLatestStatus(list){
+  const b = patientLatestStep(list);
+  if(b){
+    const k = b.kind;
+    const label = k === 'done' ? 'Done' : k === 'appt' ? 'Appointment' : k === 'labo' ? 'Labo' : (cleanStr(b.step.name) || 'Missing');
+    return { label, kind: k, d: b.d, note: cleanStr(b.step.note) };
+  }
+  const latest = list.slice().sort((a,b)=> (parseAnyDate(b.timestamp)||0) - (parseAnyDate(a.timestamp)||0))[0];
+  if(!latest) return null;
+  const info = getStatusDisplayInfo(latest);
+  return { label: info.label, kind: info.kind, d: parseAnyDate(info.datetime), note: cleanStr(latest.planDo) };
+}
+const STATUS_BADGE_STYLES = {
+  done:  'background:#E0F2E9;color:#198754;border-color:rgba(25,135,84,0.4);',
+  appt:  'background:var(--amber-soft);color:var(--amber-dark);border-color:rgba(232,163,61,0.5);',
+  missed:'background:var(--coral-soft);color:var(--coral-dark);border-color:rgba(228,87,76,0.4);',
+  labo:  'background:#EDE7FA;color:#5B3FB8;border-color:rgba(91,63,184,0.4);',
+  proc:  'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(26,107,219,0.4);'
+};
+function statusBadgeKey(kind, d, startOfToday){
+  if(kind === 'done') return 'done';
+  if(kind === 'labo') return 'labo';
+  if(kind === 'appt') return (d && d < startOfToday) ? 'missed' : 'appt';
+  return 'proc';
+}
+/* colour state of a patient = the status of the LATEST step (date + hour + minute) of any of their records */
+function getPatientLatestState(p, startOfToday){
+  let best = patientLatestStep(p.list);
   if(!best){
     const r = p.latest, stt = recomputeStatusFromSteps(r);
     const d = parseAnyDate(stt === 'Appt' ? (r.timeLast || r.doingDateTime || r.timestamp) : (r.doingDateTime || r.timestamp)) || startOfToday;
     best = { d, kind: stt === 'Done' ? 'done' : stt === 'Appt' ? 'appt' : stt === 'Labo' ? 'labo' : 'normal' };
   }
-  const B = {
-    done:  'background:#E0F2E9;color:#198754;border-color:rgba(25,135,84,0.4);',
-    appt:  'background:var(--amber-soft);color:var(--amber-dark);border-color:rgba(232,163,61,0.5);',
-    missed:'background:var(--coral-soft);color:var(--coral-dark);border-color:rgba(228,87,76,0.4);',
-    labo:  'background:#EDE7FA;color:#5B3FB8;border-color:rgba(91,63,184,0.4);',
-    proc:  'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(26,107,219,0.4);'
-  };
-  let key = best.kind === 'done' ? 'done' : best.kind === 'labo' ? 'labo'
-          : best.kind === 'appt' ? (best.d < startOfToday ? 'missed' : 'appt') : 'proc';
-  return { cls: 'pc-' + key, badge: B[key], date: best.d };
+  const key = statusBadgeKey(best.kind, best.d, startOfToday);
+  return { cls: 'pc-' + key, badge: STATUS_BADGE_STYLES[key], date: best.d };
 }
 
 /* number of distinct patients with any activity dated today */
