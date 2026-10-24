@@ -1636,7 +1636,6 @@
         <div class="dash-hero">
           <div class="dash-hero-text">
             <div class="dash-greet kh" id="dashGreeting">សួស្តី</div>
-            <div class="dash-date kh" id="dashDate"></div>
           </div>
           <div class="dash-actions">
             <button type="button" class="btn btn-primary btn-sm kh" id="dashNewRecord">＋ កត់ត្រាថ្មី · New record</button>
@@ -3050,7 +3049,6 @@ function renderDashHero(){
     const nChips = g.querySelectorAll('.tk-group:first-child .tk-chip').length;
     g.firstChild.style.setProperty('--tick-dur', (20 + nChips * 8) + 's');
   }
-  document.getElementById('dashDate').textContent = formatHeaderDate();
 }
 
 // ៣. សរសេរកូដនេះជាន់ពីលើ ដើម្បីប្រាកដថាវាទាញទិន្នន័យទាំងអស់មកបង្ហាញ
