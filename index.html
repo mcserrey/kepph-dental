@@ -324,12 +324,12 @@
 
   /* border colour = status of the patient's most recent dated activity */
   .record-card.pc-done  { border:1px solid var(--border) !important; background:var(--surface) !important; }
-  .record-card.pc-appt  { border:1.8px solid var(--amber) !important; background:linear-gradient(90deg, rgba(232,163,61,0.10) 0%, var(--surface) 40%) !important; }
+  .record-card.pc-appt  { border:1.8px solid #F28C28 !important; background:linear-gradient(90deg, rgba(242,140,40,0.12) 0%, var(--surface) 40%) !important; }
   .record-card.pc-missed{ border:1.8px solid var(--coral) !important; background:linear-gradient(90deg, rgba(228,87,76,0.10) 0%, var(--surface) 40%) !important; }
   .record-card.pc-labo  { border:1.8px solid #5B3FB8 !important; background:linear-gradient(90deg, rgba(91,63,184,0.08) 0%, var(--surface) 40%) !important; }
   .record-card.pc-proc  { border:1.8px solid var(--primary) !important; background:linear-gradient(90deg, rgba(77,208,145,0.07) 0%, var(--surface) 40%) !important; }
   .record-card.pc-done .appt-time .mono, .record-card.pc-done .appt-day { color:var(--ink-soft) !important; }
-  .record-card.pc-appt .appt-time .mono, .record-card.pc-appt .appt-day { color:var(--amber-dark) !important; }
+  .record-card.pc-appt .appt-time .mono, .record-card.pc-appt .appt-day { color:#B85C00 !important; }
   .record-card.pc-missed .appt-time .mono, .record-card.pc-missed .appt-day { color:var(--coral-dark) !important; }
   .record-card.pc-labo .appt-time .mono, .record-card.pc-labo .appt-day { color:#5B3FB8 !important; }
   .sb-badge.today{background:#198754;color:#fff;}
@@ -367,6 +367,8 @@
   .dd-step-del{width:22px;height:22px;flex-shrink:0;border-radius:50%;border:none;background:var(--coral-soft);color:var(--coral-dark);cursor:pointer;font-size:11px;margin-top:5px;}
   .dd-step-del:hover{background:#f0b8b1;}
   .dd-step-actions{display:flex;gap:6px;flex-shrink:0;}
+  .emr-pat-name .emr-name-edit{font-size:14px;opacity:.45;margin-left:4px;font-weight:400;}
+  .emr-pat-name:hover .emr-name-edit{opacity:1;color:var(--primary-dark);}
   .dd-step-edit{width:22px;height:22px;flex-shrink:0;border-radius:50%;border:none;background:var(--primary-soft);color:var(--primary-dark);cursor:pointer;font-size:11px;margin-top:5px;}
   .dd-step-edit:hover{background:var(--primary-softer);outline:1px solid var(--primary);}
   .dd-step-editbox{flex:1;min-width:0;display:grid;gap:6px;background:var(--primary-softer);border:1px dashed var(--primary);border-radius:10px;padding:8px;}
@@ -970,6 +972,12 @@
   .doc-actions button{flex:1;border:1px solid var(--border);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:5px 4px;font-size:12px;cursor:pointer;font-family:inherit;}
   .doc-actions button:hover{background:var(--primary-soft);border-color:var(--primary);}
   .doc-actions button.danger:hover{background:var(--coral-soft);border-color:var(--coral);color:var(--coral-dark);}
+  .doc-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:13px;margin:0 0 12px;}
+  .doc-crumbs button{border:none;background:none;color:var(--primary-dark);cursor:pointer;font-weight:700;font-family:inherit;padding:3px 8px;border-radius:8px;font-size:13px;}
+  .doc-crumbs button:hover{background:var(--primary-soft);}
+  .doc-crumbs .sep{color:var(--ink-dim);} .doc-crumbs .cur{font-weight:800;color:var(--ink);padding:3px 8px;}
+  .doc-card.folder .doc-thumb{background:linear-gradient(135deg,#FFF3D6,#FFE0A3);}
+  .doc-card.folder .doc-thumb .doc-ico{font-size:60px;}
   @media (max-width:640px){ .doc-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;} .doc-thumb{height:105px;} }
   .gl-item{aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--surface-2);cursor:pointer;border:1px solid var(--border-soft);transition:border-color .12s ease;}
   .gl-item:hover{border-color:var(--primary);}
@@ -1670,13 +1678,12 @@
         <div class="kpi-grid" id="dashKpis"></div>
 
         <!-- 1b. 14-day trend -->
-        <div class="dash-section-title kh"><span>📈 និន្នាការ ១៤ ថ្ងៃចុងក្រោយ</span><small>Patient visits &amp; revenue · last 14 days</small></div>
+        <div class="dash-section-title kh"><span>📈 និន្នាការ ១៤ ថ្ងៃចុងក្រោយ</span><small>Patient visits · last 14 days</small></div>
         <div class="card-type-stats-panel trend-panel">
           <div class="trend-stats" id="trendStats"></div>
           <div class="trend-legend kh">
             <span class="lg-bar">ករណី · Visits</span>
             <span class="lg-pat">អ្នកជំងឺ · Patients</span>
-            <span class="lg-rev">ចំណូល · Revenue (៛)</span>
           </div>
           <div class="trend-chart" id="trendChart"></div>
           <div class="trend-tip kh" id="trendTip">ចុច ឬដាក់ cursor លើថ្ងៃណាមួយ ដើម្បីមើលព័ត៌មានលម្អិត</div>
@@ -2077,10 +2084,12 @@
             <span class="inv-status kh" id="docsCount"></span>
             <a class="btn btn-outline btn-sm kh" id="docsOpenDrive" href="#" target="_blank" rel="noopener">📂 បើកក្នុង Drive</a>
             <button type="button" class="btn btn-outline btn-sm kh" id="docsSyncBtn">🔄 Sync</button>
+            <button type="button" class="btn btn-outline btn-sm kh" id="docsNewFolderBtn">📁 Folder ថ្មី</button>
             <button type="button" class="btn btn-primary btn-sm kh" id="docsAddBtn">＋ បន្ថែមឯកសារ</button>
             <input type="file" id="docsFileInput" multiple hidden>
           </div>
         </div>
+        <div class="doc-crumbs kh" id="docsCrumbs"></div>
         <div class="doc-grid" id="docsGrid"></div>
       </section>
 
@@ -3689,28 +3698,6 @@ function getWeekRange(now){
 /* ===== Shared visit / appointment helpers (dashboard + appointments page) =====
    A treatment record can span several visits (steps). Every non-appointment, non-labo step
    is a real visit on its own date; old records without steps fall back to doingDateTime/timestamp. */
-function parseFee(v){
-  const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10);
-  return isNaN(n) || n <= 0 ? 0 : n;
-}
-function fmtRiel(n){ return Math.round(n).toLocaleString('en-US') + ' ៛'; }
-function fmtRielShort(n){
-  if(n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
-  if(n >= 1e3) return Math.round(n / 1e3) + 'K';
-  return String(Math.round(n));
-}
-/* revenue entries of a record: every step that carries a fee, on that step's date */
-function recordFeeEntries(r){
-  const out = [];
-  stepsArray(r).forEach(st => {
-    const f = parseFee(st.fee);
-    if(!f) return;
-    const d = parseAnyDate(st.datetime || r.doingDateTime || r.timestamp);
-    if(d) out.push({ d, fee: f });
-  });
-  return out;
-}
-
 function recordVisitDates(r){
   const out = [], seen = new Set();
   const push = dt => { if(!dt) return; const k = dt.toDateString(); if(seen.has(k)) return; seen.add(k); out.push(dt); };
@@ -4126,7 +4113,7 @@ function renderTrend14(){
   const days = [];
   for(let i = 0; i < 28; i++){
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    days.push({ d, key: dayKey(d), visits: 0, pats: new Set(), rev: 0 });
+    days.push({ d, key: dayKey(d), visits: 0, pats: new Set() });
   }
   const byKey = new Map(days.map(x => [x.key, x]));
   allRecords.forEach(r => {
@@ -4136,15 +4123,10 @@ function renderTrend14(){
       const b = byKey.get(dayKey(d));
       if(b){ b.visits++; b.pats.add(pk); }
     });
-    recordFeeEntries(r).forEach(e => {
-      const b = byKey.get(dayKey(e.d));
-      if(b) b.rev += e.fee;
-    });
   });
   const prev = days.slice(0, 14), cur = days.slice(14);
   const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
   const curVisits = sum(cur, x => x.visits), prevVisits = sum(prev, x => x.visits);
-  const curRev = sum(cur, x => x.rev), prevRev = sum(prev, x => x.rev);
   const curPats = new Set(); cur.forEach(x => x.pats.forEach(p => curPats.add(p)));
   const workDays = cur.filter(x => x.visits > 0).length;
   const busiest = cur.reduce((a, x) => x.visits > a.visits ? x : a, cur[0]);
@@ -4161,26 +4143,20 @@ function renderTrend14(){
     <div class="trend-stat"><div class="ts-l kh">អ្នកជំងឺ · Patients</div><div class="ts-v">${curPats.size}</div>
       <div class="ts-s kh">ខុសៗគ្នា ក្នុង ១៤ ថ្ងៃ</div></div>
     <div class="trend-stat"><div class="ts-l kh">មធ្យម/ថ្ងៃធ្វើការ · Avg/day</div><div class="ts-v">${workDays ? (curVisits / workDays).toFixed(1) : '0'}</div>
-      <div class="ts-s kh">${workDays} ថ្ងៃមានអ្នកជំងឺ${busiest.visits ? ` · ច្រើនបំផុត ${fmtD(busiest.d)} (${busiest.visits})` : ''}</div></div>
-    <div class="trend-stat"><div class="ts-l kh">ចំណូល · Revenue</div><div class="ts-v rev">${curRev ? fmtRielShort(curRev) : '0'} <span style="font-size:12px;">៛</span></div>
-      <div class="ts-s kh">${curRev || prevRev ? pct(curRev, prevRev) + ' ធៀប ១៤ ថ្ងៃមុន' : 'បញ្ចូលថ្លៃសេវាក្នុង Step'}</div></div>`;
+      <div class="ts-s kh">${workDays} ថ្ងៃមានអ្នកជំងឺ${busiest.visits ? ` · ច្រើនបំផុត ${fmtD(busiest.d)} (${busiest.visits})` : ''}</div></div>`;
 
   // ---- SVG chart ----
   const W = 760, H = 230, L = 34, R = 50, T = 18, B = 40;
   const pw = W - L - R, ph = H - T - B, n = cur.length, slot = pw / n, bw = Math.min(30, slot * 0.58);
   const niceMax = v => { if(v <= 4) return 4; const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; };
   const vMax = niceMax(Math.max(1, ...cur.map(x => x.visits)));
-  const rMaxRaw = Math.max(...cur.map(x => x.rev));
-  const rMax = rMaxRaw ? niceMax(rMaxRaw) : 0;
   const x = i => L + slot * i + slot / 2;
   const yV = v => T + ph - (v / vMax) * ph;
-  const yR = v => T + ph - (rMax ? v / rMax : 0) * ph;
   let g = '';
   for(let k = 0; k <= 4; k++){
     const yy = T + ph * k / 4;
     g += `<line class="tc-grid" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/>`;
     g += `<text class="tc-axis" x="${L - 6}" y="${yy + 3}" text-anchor="end">${Math.round(vMax * (4 - k) / 4)}</text>`;
-    if(rMax) g += `<text class="tc-axis" x="${W - R + 6}" y="${yy + 3}" text-anchor="start" style="fill:#B4690E">${fmtRielShort(rMax * (4 - k) / 4)}</text>`;
   }
   let bars = '', labels = '', hits = '';
   cur.forEach((b, i) => {
@@ -4195,22 +4171,15 @@ function renderTrend14(){
     hits += `<rect class="tc-hit" data-i="${i}" x="${L + slot * i}" y="${T}" width="${slot}" height="${ph}"/>`;
   });
   const patPath = cur.map((b, i) => `${i ? 'L' : 'M'}${x(i)},${yV(b.pats.size)}`).join(' ');
-  let rev = '';
-  if(rMax){
-    const pts = cur.map((b, i) => [x(i), yR(b.rev)]);
-    const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
-    rev = `<path class="tc-rev-area" d="${line} L${pts[n-1][0]},${T + ph} L${pts[0][0]},${T + ph} Z"/><path class="tc-rev" d="${line}"/>` +
-          pts.map((p, i) => cur[i].rev ? `<circle class="tc-dot" cx="${p[0]}" cy="${p[1]}" r="3.5"/>` : '').join('');
-  }
   host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="និន្នាការ ១៤ ថ្ងៃ">
-    ${g}<g>${hits}</g>${bars}<path class="tc-pat" d="${patPath}"/>${rev}${labels}</svg>`;
+    ${g}<g>${hits}</g>${bars}<path class="tc-pat" d="${patPath}"/>${labels}</svg>`;
 
   const tip = document.getElementById('trendTip');
   const show = i => {
     const b = cur[i];
     host.querySelectorAll('.tc-hit').forEach(h => h.classList.toggle('on', +h.dataset.i === i));
     const dn = ['អាទិត្យ','ច័ន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍'][b.d.getDay()];
-    tip.innerHTML = `ថ្ងៃ${dn} ${fmtD(b.d)}/${b.d.getFullYear()} · ករណី <b>${b.visits}</b> · អ្នកជំងឺ <b>${b.pats.size}</b> · ចំណូល <b class="rv">${fmtRiel(b.rev)}</b>`;
+    tip.innerHTML = `ថ្ងៃ${dn} ${fmtD(b.d)}/${b.d.getFullYear()} · ករណី <b>${b.visits}</b> · អ្នកជំងឺ <b>${b.pats.size}</b>`;
   };
   host.querySelectorAll('.tc-hit').forEach(h => {
     h.addEventListener('mouseenter', () => show(+h.dataset.i));
@@ -4654,7 +4623,7 @@ function patientLatestStatus(list){
 }
 const STATUS_BADGE_STYLES = {
   done:  'background:#E0F2E9;color:#198754;border-color:rgba(25,135,84,0.4);',
-  appt:  'background:var(--amber-soft);color:var(--amber-dark);border-color:rgba(232,163,61,0.5);',
+  appt:  'background:#FFE9D2;color:#B85C00;border-color:rgba(242,140,40,0.55);',
   missed:'background:var(--coral-soft);color:var(--coral-dark);border-color:rgba(228,87,76,0.4);',
   labo:  'background:#EDE7FA;color:#5B3FB8;border-color:rgba(91,63,184,0.4);',
   proc:  'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(77,208,145,0.4);'
@@ -4673,7 +4642,8 @@ function getPatientLatestState(p, startOfToday){
     const d = parseAnyDate(stt === 'Appt' ? (r.timeLast || r.doingDateTime || r.timestamp) : (r.doingDateTime || r.timestamp)) || startOfToday;
     best = { d, kind: stt === 'Done' ? 'done' : stt === 'Appt' ? 'appt' : stt === 'Labo' ? 'labo' : 'normal' };
   }
-  const key = statusBadgeKey(best.kind, best.d, startOfToday);
+  let key = statusBadgeKey(best.kind, best.d, startOfToday);
+  if(key === 'proc') key = 'missed';   /* last step is a plain procedure = Missing (ខកខាន) → red */
   /* Done = no colour (neutral card) */
   const badge = key === 'done' ? 'background:var(--surface-2);color:var(--ink-soft);border-color:var(--border);' : STATUS_BADGE_STYLES[key];
   return { cls: 'pc-' + key, badge, date: best.d };
@@ -4738,7 +4708,6 @@ function renderDoDetailBody(r){
           <input type="text" class="kh dd-edit-custom" placeholder="សរសេរជំហានផ្សេង / type custom step" style="display:none;">
           <input type="datetime-local" class="mono dd-edit-dt" value="${toDateTimeLocalValue(st.datetime)}">
           <input type="text" class="kh dd-edit-note" value="${esc(st.note || '')}" placeholder="ចំណាំ (Note) — ស្រេចចិត្ត">
-          <input type="text" class="mono dd-edit-fee" inputmode="numeric" value="${st.fee ? esc(String(st.fee)) : ''}" placeholder="ថ្លៃសេវា (៛) · Fee">
           <div class="dd-edit-foot kh"><span>រក្សាទុកដោយស្វ័យប្រវត្តិ · Auto-save</span><button type="button" class="btn btn-primary btn-sm kh dd-edit-done">✓ រួចរាល់</button></div>
         </div>
       </div>`;
@@ -4748,7 +4717,6 @@ function renderDoDetailBody(r){
       <div class="dd-step-info">
         <span class="dd-step-name kh ${nameCls}">${esc(st.name)}</span> - <span class="mono dd-step-dt">${st.datetime ? formatDateDisplay(st.datetime) : '—'}</span>
         ${st.note ? `<div class="dd-step-note kh">${esc(st.note)}</div>` : ''}
-        ${st.fee ? `<div class="dd-step-fee mono">💵 ${fmtRiel(st.fee)}</div>` : ''}
       </div>
       <div class="dd-step-actions">
         <button type="button" class="dd-step-edit" data-step-id="${esc(st.id)}" title="កែជំហាននេះ (PIN)" aria-label="កែជំហាននេះ">✎</button>
@@ -4772,7 +4740,6 @@ function renderDoDetailBody(r){
       <input type="text" id="ddNewStepCustom" class="kh" placeholder="សរសេរជំហានផ្សេង / type custom step" style="display:none;">
       <input type="datetime-local" id="ddNewStepDT" class="mono">
       <input type="text" id="ddNewStepNote" class="kh" placeholder="ចំណាំ (Note) — ស្រេចចិត្ត">
-      <input type="text" id="ddNewStepFee" class="mono" inputmode="numeric" placeholder="ថ្លៃសេវា (៛) — ស្រេចចិត្ត · Fee">
       <button type="button" class="btn btn-primary btn-sm kh" id="ddAddStepBtn">+ បន្ថែម</button>
     </div>
     <div class="modal-actions">
@@ -4808,8 +4775,7 @@ function renderDoDetailBody(r){
     const save = ()=> (stepName() ? updateStep(r._id, stepId, {
       name: stepName(),
       datetime: box.querySelector('.dd-edit-dt').value ? formatDateDisplay(box.querySelector('.dd-edit-dt').value) : '',
-      note: box.querySelector('.dd-edit-note').value.trim(),
-      fee: parseFee(box.querySelector('.dd-edit-fee').value)
+      note: box.querySelector('.dd-edit-note').value.trim()
     }) : null);
     box.querySelectorAll('select, input').forEach(el=> el.addEventListener('change', save));
     box.querySelector('.dd-edit-done').addEventListener('click', ()=>{
@@ -4872,6 +4838,47 @@ function updateStep(id, stepId, patch){
 
 /* re-render the Full Dental Record body in place (e.g. after a step changes its status)
    without pushing another history entry — the record modal is already open */
+/* ✎ rename a patient from the Full Dental Record header — applies to ALL of the patient's records */
+function patientRenameDialog(oldName){
+  const ov = document.createElement('div');
+  ov.className = 'overlay'; ov.style.zIndex = '1200';
+  ov.innerHTML = `<div class="modal narrow" style="max-width:420px;"><div class="modal-body" style="padding:22px;">
+      <div class="kh" style="font-size:14px;font-weight:700;margin-bottom:10px;">✏️ កែឈ្មោះអ្នកជំងឺ · Edit patient name</div>
+      <input type="text" id="patRenameInput" class="kh" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;" value="${esc(oldName)}">
+      <div class="kh" id="patRenameHint" style="font-size:11.5px;color:var(--ink-dim);margin-top:8px;">នឹងកែឈ្មោះក្នុងកំណត់ត្រាទាំងអស់របស់អ្នកជំងឺនេះ</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn btn-outline kh" id="patRenameCancel">បោះបង់</button>
+        <button class="btn btn-primary kh" id="patRenameOk">រក្សាទុក</button>
+      </div></div></div>`;
+  document.body.appendChild(ov);
+  const input = ov.querySelector('#patRenameInput'); input.focus(); input.select();
+  const close = () => { if(ov.parentNode) ov.parentNode.removeChild(ov); };
+  const save = () => {
+    const nn = input.value.trim().replace(/\s+/g, ' ');
+    if(!nn || nn === oldName){ close(); return; }
+    const recs = getPatientRecords(oldName);
+    if(!recs.length){ close(); return; }
+    recs.forEach(r => { r.name = nn; });
+    saveLocalRecords();
+    recs.forEach(r => pushToSheet('updateRecord', {...r}));
+    close();
+    activePatientContext = nn;
+    renderAll();
+    refreshPatientBodyOnly(nn);
+    flashAutoSaved();
+  };
+  ov.querySelector('#patRenameCancel').addEventListener('click', close);
+  ov.querySelector('#patRenameOk').addEventListener('click', save);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape') close(); });
+}
+document.addEventListener('click', e => {
+  const h = e.target.closest && e.target.closest('#patientBody .emr-pat-name');
+  if(h && activePatientContext){
+    const nm = activePatientContext;
+    promptForPin('សូមបញ្ចូល PIN ដើម្បីកែឈ្មោះអ្នកជំងឺ', () => patientRenameDialog(nm));
+  }
+});
+
 function refreshPatientBodyOnly(name){
   const origPushState = history.pushState;
   history.pushState = function(){};
@@ -4900,10 +4907,8 @@ function addStep(id){
   if(!procSel) return;
   const dt = document.getElementById('ddNewStepDT').value;
   const note = document.getElementById('ddNewStepNote').value.trim();
-  const fee = parseFee(document.getElementById('ddNewStepFee').value);
   const steps = stepsArray(allRecords[idx]);
   const newStep = { id: genStepId(), name: procSel, datetime: dt ? formatDateDisplay(dt) : '', note };
-  if(fee) newStep.fee = fee;
   steps.push(newStep);
   allRecords[idx].steps = JSON.stringify(steps);
   allRecords[idx].doing = steps[0].name;
@@ -5258,7 +5263,7 @@ function openPatientRecord(name){
           <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
             <div class="emr-avatar">👤</div>
             <div>
-              <h2 class="emr-pat-name kh" style="${nameColorStyle}">${latest.name}</h2>
+              <h2 class="emr-pat-name kh" style="${nameColorStyle}cursor:pointer;" title="ចុចដើម្បីកែឈ្មោះ · Click to edit name">${latest.name} <span class="emr-name-edit" aria-hidden="true">✎</span></h2>
               <div class="mono" style="font-size:11px; color:var(--ink-soft); margin-top:2px;">ID: ${latest.code || 'N/A'}</div>
             </div>
           </div>
@@ -8784,17 +8789,21 @@ async function fetchGalleryFiles(silent){
 function galleryMaybeFetch(){ if(Date.now() - galleryFetchedAt > COL_STALE_MS) fetchGalleryFiles(true); }
 
 /* =========================================================
-   ឃ្លាំងឯកសារ · Document library — Google Drive folder
-   list (GET) + upload / rename / delete (POST, Files.gs)
+   ឃ្លាំងឯកសារ · Document library — Google Drive folder (with sub-folders)
+   list (GET) + upload / rename / delete / new folder (POST, Files.gs)
    ========================================================= */
-const DOCS_FOLDER_ID = '1niLfN3fiMkCE57LnUJhqKrA9auqCoxny';
-const DOCS_FOLDER_URL = 'https://drive.google.com/drive/folders/' + DOCS_FOLDER_ID + '?usp=sharing';
-const DOCS_FILES_KEY = 'kep_dental_docs_files_v1';
+const DOCS_ROOT_ID = '1niLfN3fiMkCE57LnUJhqKrA9auqCoxny';
+const DOCS_CACHE_KEY = 'kep_dental_docs_v2';
 const DOCS_MAX_BYTES = 15 * 1024 * 1024;
 const DOCS_STALE_MS = 5 * 60 * 1000;
-let docsFiles = [], docsFetchedAt = 0, docsFetching = false;
-try{ const a = JSON.parse(localStorage.getItem(DOCS_FILES_KEY)); if(Array.isArray(a)) docsFiles = a; }catch(e){}
-function saveDocsFiles(){ try{ localStorage.setItem(DOCS_FILES_KEY, JSON.stringify(docsFiles)); }catch(e){} }
+function docsFolderUrl(id){ return 'https://drive.google.com/drive/folders/' + id + '?usp=sharing'; }
+let docsStack = [{ id: DOCS_ROOT_ID, name: 'ឃ្លាំងឯកសារ' }];   // breadcrumb path, last = open folder
+let docsCache = {};                                              // folderId -> { files, folders, at }
+let docsFetching = false;
+try{ const c = JSON.parse(localStorage.getItem(DOCS_CACHE_KEY)); if(c && typeof c === 'object') docsCache = c; }catch(e){}
+function saveDocsCache(){ try{ localStorage.setItem(DOCS_CACHE_KEY, JSON.stringify(docsCache)); }catch(e){} }
+function docsCurId(){ return docsStack[docsStack.length - 1].id; }
+function docsCur(){ return docsCache[docsCurId()] || { files: [], folders: [], at: 0 }; }
 
 function setDocsStatus(text, tone, autoClear){
   const el = document.getElementById('docsStatus'); if(!el) return;
@@ -8829,52 +8838,83 @@ function docDateText(v){
 }
 function docOpenUrl(f){ return f.url || ('https://drive.google.com/file/d/' + f.id + '/view'); }
 
+function renderDocsCrumbs(){
+  const host = document.getElementById('docsCrumbs'); if(!host) return;
+  host.innerHTML = docsStack.map((c, i) => {
+    const last = i === docsStack.length - 1;
+    const label = (i === 0 ? '🏠 ' : '📁 ') + esc(c.name);
+    return (i ? '<span class="sep">›</span>' : '') + (last ? `<span class="cur">${label}</span>` : `<button type="button" data-crumb="${i}">${label}</button>`);
+  }).join('');
+  const open = document.getElementById('docsOpenDrive'); if(open) open.href = docsFolderUrl(docsCurId());
+}
+
 function renderDocs(){
   const grid = document.getElementById('docsGrid'); if(!grid) return;
+  renderDocsCrumbs();
+  const cur = docsCur();
   const q = (document.getElementById('docsSearch').value || '').trim().toLowerCase();
   const tf = document.getElementById('docsTypeFilter').value;
-  const list = docsFiles
+  const folders = tf !== 'all' ? [] : cur.folders.filter(f => !q || (f.name || '').toLowerCase().includes(q))
+    .sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+  const files = cur.files
     .filter(f => (!q || (f.name || '').toLowerCase().includes(q)) && (tf === 'all' || docKind(f).k === tf))
     .sort((a,b) => (new Date(b.date||0)) - (new Date(a.date||0)));
   const cnt = document.getElementById('docsCount');
-  if(cnt) cnt.textContent = list.length + ' / ' + docsFiles.length + ' files';
-  if(!list.length){
-    grid.innerHTML = `<div class="empty-state kh" style="grid-column:1/-1;">${docsFetchedAt
-      ? 'មិនទាន់មានឯកសារទេ<br><span style="opacity:.7">No documents — press ＋ to add</span>'
+  if(cnt) cnt.textContent = folders.length + ' folders · ' + files.length + ' files';
+  if(!folders.length && !files.length){
+    grid.innerHTML = `<div class="empty-state kh" style="grid-column:1/-1;">${cur.at
+      ? 'Folder នេះទទេ<br><span style="opacity:.7">Empty — press 📁 or ＋ to add</span>'
       : 'កំពុងរង់ចាំទិន្នន័យ...<br><span style="opacity:.7">Press Sync to load</span>'}</div>`;
     return;
   }
-  grid.innerHTML = list.map(f => {
+  const folderCards = folders.map(f => `<div class="doc-card folder" data-id="${esc(f.id)}" data-type="folder">
+      <div class="doc-thumb" data-act="enter" title="បើក Folder"><span class="doc-ico">📁</span><span class="doc-kind">FOLDER</span></div>
+      <div class="doc-body"><div class="doc-name kh" title="${esc(f.name)}">${esc(f.name)}</div><div class="doc-meta mono">${esc(docDateText(f.date))}</div></div>
+      <div class="doc-actions">
+        <button type="button" data-act="enter" class="kh" title="បើក Folder">📂 បើក</button>
+        <button type="button" data-act="rename" class="kh" title="កែឈ្មោះ">✏️ កែ</button>
+        <button type="button" data-act="delete" class="kh danger" title="លុប">🗑️ លុប</button>
+      </div></div>`).join('');
+  const fileCards = files.map(f => {
     const kd = docKind(f);
     const meta = [docSizeText(f.size), docDateText(f.date)].filter(Boolean).join(' · ');
     const thumb = `<img src="https://drive.google.com/thumbnail?id=${esc(f.id)}&sz=w400" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'doc-ico',textContent:'${kd.icon}'}))">`;
-    return `<div class="doc-card" data-id="${esc(f.id)}">
+    return `<div class="doc-card" data-id="${esc(f.id)}" data-type="file">
       <div class="doc-thumb" data-act="open" title="បើក · Open">${thumb}<span class="doc-kind">${esc(kd.label)}</span></div>
       <div class="doc-body"><div class="doc-name kh" title="${esc(f.name)}">${esc(f.name)}</div><div class="doc-meta mono">${esc(meta)}</div></div>
       <div class="doc-actions">
         <button type="button" data-act="open" class="kh" title="បើក / កែក្នុង Drive">📂 បើក</button>
         <button type="button" data-act="rename" class="kh" title="កែឈ្មោះ">✏️ កែ</button>
         <button type="button" data-act="delete" class="kh danger" title="លុប">🗑️ លុប</button>
-      </div>
-    </div>`;
+      </div></div>`;
   }).join('');
+  grid.innerHTML = folderCards + fileCards;
 }
 
-async function fetchDocs(silent){
+async function fetchDocs(silent, folderId){
+  folderId = folderId || docsCurId();
   if(!webAppUrl || docsFetching) return;
   docsFetching = true;
   if(!silent) setDocsStatus('កំពុងទាញឯកសារ...', '');
   try{
     const sep = webAppUrl.includes('?') ? '&' : '?';
-    const res = await fetch(`${webAppUrl}${sep}action=getDocFiles&folderId=${encodeURIComponent(DOCS_FOLDER_ID)}&t=${Date.now()}`);
+    const res = await fetch(`${webAppUrl}${sep}action=getDocFiles&folderId=${encodeURIComponent(folderId)}&t=${Date.now()}`);
     const json = await res.json();
-    if(!(json && json.status === 'success' && json.kind === 'docs' && Array.isArray(json.data))){
-      setDocsStatus('⚠️ Apps Script មិនទាន់គាំទ្រ (សូមដាក់ Files.gs ហើយ Deploy Version ថ្មី)', 'warn');
+    if(json && json.status === 'error' && json.message){
+      setDocsStatus('⚠️ Drive: ' + String(json.message).slice(0, 140), 'warn');
       return;
     }
-    docsFiles = json.data.map(f => ({ id: f.id || '', name: f.name || '', url: f.url || '', mimeType: f.mimeType || '', size: f.size || 0, date: f.date || '' })).filter(f => f.id);
-    docsFetchedAt = Date.now();
-    saveDocsFiles(); renderDocs();
+    if(!(json && json.status === 'success' && json.kind === 'docs' && Array.isArray(json.data))){
+      setDocsStatus('⚠️ Apps Script មិនទាន់គាំទ្រ (សូមដាក់ Files.gs ថ្មី ហើយ Deploy Version ថ្មី)', 'warn');
+      return;
+    }
+    docsCache[folderId] = {
+      files: json.data.map(f => ({ id: f.id || '', name: f.name || '', url: f.url || '', mimeType: f.mimeType || '', size: f.size || 0, date: f.date || '' })).filter(f => f.id),
+      folders: (Array.isArray(json.folders) ? json.folders : []).map(f => ({ id: f.id || '', name: f.name || '', date: f.date || '' })).filter(f => f.id),
+      at: Date.now()
+    };
+    saveDocsCache();
+    if(folderId === docsCurId()) renderDocs();
     setDocsStatus('✓ ទាញរួចរាល់', 'ok', true);
   }catch(e){
     if(!silent) setDocsStatus('⚠️ ទាញមិនបាន សូមពិនិត្យអ៊ីនធឺណិត', 'warn', true);
@@ -8882,7 +8922,18 @@ async function fetchDocs(silent){
     docsFetching = false;
   }
 }
-function docsMaybeFetch(){ if(Date.now() - docsFetchedAt > DOCS_STALE_MS) fetchDocs(docsFetchedAt > 0); }
+function docsMaybeFetch(){ if(Date.now() - docsCur().at > DOCS_STALE_MS) fetchDocs(docsCur().at > 0); }
+function docsGoTo(index){
+  docsStack = docsStack.slice(0, index + 1);
+  document.getElementById('docsSearch').value = '';
+  renderDocs(); docsMaybeFetch();
+}
+function docsEnter(f){
+  docsStack.push({ id: f.id, name: f.name });
+  document.getElementById('docsSearch').value = '';
+  renderDocs();
+  fetchDocs(docsCache[f.id] ? true : false, f.id);
+}
 
 /* POST to Apps Script (no-cors: the reply cannot be read, so the list is re-fetched afterwards) */
 function docsPost(action, data){
@@ -8893,7 +8944,10 @@ function docsReady(){
   if(!navigator.onLine || !webAppUrl){ setDocsStatus('⚠️ ត្រូវការអ៊ីនធឺណិត និង Web App URL', 'warn', true); return false; }
   return true;
 }
-function docsRefetchSoon(){ setTimeout(()=>fetchDocs(true), 2500); setTimeout(()=>fetchDocs(true), 7000); }
+function docsRefetchSoon(){
+  const id = docsCurId();
+  setTimeout(()=>fetchDocs(true, id), 2500); setTimeout(()=>fetchDocs(true, id), 7000);
+}
 function docFileToBase64(file){
   return new Promise((resolve, reject)=>{
     const r = new FileReader();
@@ -8905,6 +8959,7 @@ function docFileToBase64(file){
 async function uploadDocs(fileList){
   if(!docsReady()) return;
   const files = Array.from(fileList || []); if(!files.length) return;
+  const target = docsCurId();
   let ok = 0;
   for(let i = 0; i < files.length; i++){
     const f = files[i];
@@ -8912,65 +8967,92 @@ async function uploadDocs(fileList){
     setDocsStatus(`⏳ កំពុងបង្ហោះ ${i+1}/${files.length}: ${f.name}`, '');
     try{
       const b64 = await docFileToBase64(f);
-      await docsPost('uploadDoc', { folderId: DOCS_FOLDER_ID, filename: f.name, mimeType: f.type || 'application/octet-stream', base64: b64 });
+      await docsPost('uploadDoc', { folderId: target, filename: f.name, mimeType: f.type || 'application/octet-stream', base64: b64 });
       ok++;
     }catch(e){ setDocsStatus(`⚠️ បង្ហោះ «${f.name}» មិនបាន`, 'warn'); }
   }
   if(ok){ setDocsStatus(`✓ បានបញ្ជូន ${ok} ឯកសារ — កំពុងធ្វើបច្ចុប្បន្នភាព...`, 'ok'); docsRefetchSoon(); }
 }
-function docRenameDialog(f){
+/* small in-page name dialog (prompt() is blocked inside Google Sites) */
+function docNameDialog(title, initial, okLabel, onSave){
   const ov = document.createElement('div');
   ov.className = 'overlay'; ov.style.zIndex = '999';
   ov.innerHTML = `<div class="modal narrow" style="max-width:420px;"><div class="modal-body" style="padding:22px;">
-      <div class="kh" style="font-size:14px;font-weight:700;margin-bottom:10px;">✏️ កែឈ្មោះឯកសារ · Rename</div>
-      <input type="text" id="docRenameInput" class="kh" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;" value="${esc(f.name)}">
+      <div class="kh" style="font-size:14px;font-weight:700;margin-bottom:10px;">${esc(title)}</div>
+      <input type="text" id="docNameInput" class="kh" style="width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;" value="${esc(initial)}">
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-        <button class="btn btn-outline" id="docRenameCancel">បោះបង់</button>
-        <button class="btn btn-primary" id="docRenameOk">រក្សាទុក</button>
+        <button class="btn btn-outline kh" id="docNameCancel">បោះបង់</button>
+        <button class="btn btn-primary kh" id="docNameOk">${esc(okLabel)}</button>
       </div></div></div>`;
   document.body.appendChild(ov);
-  const input = ov.querySelector('#docRenameInput');
+  const input = ov.querySelector('#docNameInput');
   input.focus();
-  const dot = (f.name || '').lastIndexOf('.');
+  const dot = initial.lastIndexOf('.');
   try{ input.setSelectionRange(0, dot > 0 ? dot : input.value.length); }catch(e){}
   const close = () => { if(ov.parentNode) ov.parentNode.removeChild(ov); };
   const save = () => {
-    const nn = input.value.trim();
-    if(!nn || nn === f.name){ close(); return; }
-    if(!docsReady()){ close(); return; }
-    f.name = nn; saveDocsFiles(); renderDocs();
-    docsPost('renameDoc', { fileId: f.id, newName: nn }).then(()=>{ setDocsStatus('✓ បានកែឈ្មោះ', 'ok', true); docsRefetchSoon(); })
-      .catch(()=> setDocsStatus('⚠️ កែឈ្មោះមិនបាន', 'warn', true));
-    close();
+    const nn = input.value.trim().replace(/[\\/:*?"<>|]+/g, '-');
+    if(!nn || nn === initial){ close(); return; }
+    close(); onSave(nn);
   };
-  ov.querySelector('#docRenameCancel').addEventListener('click', close);
-  ov.querySelector('#docRenameOk').addEventListener('click', save);
+  ov.querySelector('#docNameCancel').addEventListener('click', close);
+  ov.querySelector('#docNameOk').addEventListener('click', save);
   input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape') close(); });
 }
-function docDelete(f){
+function docRename(item, isFolder){
+  docNameDialog(isFolder ? '✏️ កែឈ្មោះ Folder · Rename folder' : '✏️ កែឈ្មោះឯកសារ · Rename', item.name, 'រក្សាទុក', nn => {
+    if(!docsReady()) return;
+    item.name = nn; saveDocsCache(); renderDocs();
+    docsPost('renameDoc', { fileId: item.id, newName: nn, isFolder: !!isFolder })
+      .then(()=>{ setDocsStatus('✓ បានកែឈ្មោះ', 'ok', true); docsRefetchSoon(); })
+      .catch(()=> setDocsStatus('⚠️ កែឈ្មោះមិនបាន', 'warn', true));
+  });
+}
+function docDelete(item, isFolder){
   if(!docsReady()) return;
-  showConfirm(`លុបឯកសារ «${esc(f.name)}» ?\n(ផ្លាស់ទីទៅធុងសំរាមក្នុង Google Drive)`, () => {
-    docsFiles = docsFiles.filter(x => x.id !== f.id); saveDocsFiles(); renderDocs();
-    docsPost('trashDoc', { fileId: f.id }).then(()=>{ setDocsStatus('✓ បានលុប', 'ok', true); docsRefetchSoon(); })
+  const msg = isFolder
+    ? `លុប Folder «${esc(item.name)}» និងឯកសារទាំងអស់ក្នុងនោះ ?\n(ផ្លាស់ទីទៅធុងសំរាមក្នុង Google Drive)`
+    : `លុបឯកសារ «${esc(item.name)}» ?\n(ផ្លាស់ទីទៅធុងសំរាមក្នុង Google Drive)`;
+  showConfirm(msg, () => {
+    const c = docsCur();
+    if(isFolder) c.folders = c.folders.filter(x => x.id !== item.id); else c.files = c.files.filter(x => x.id !== item.id);
+    saveDocsCache(); renderDocs();
+    docsPost('trashDoc', { fileId: item.id, isFolder: !!isFolder })
+      .then(()=>{ setDocsStatus('✓ បានលុប', 'ok', true); docsRefetchSoon(); })
       .catch(()=> setDocsStatus('⚠️ លុបមិនបាន', 'warn', true));
   });
 }
+function docNewFolder(){
+  if(!docsReady()) return;
+  docNameDialog('📁 Folder ថ្មី · New folder', '', 'បង្កើត', nn => {
+    setDocsStatus('⏳ កំពុងបង្កើត Folder...', '');
+    docsPost('createDocFolder', { parentId: docsCurId(), name: nn })
+      .then(()=>{ setDocsStatus('✓ បានបញ្ជូនសំណើបង្កើត Folder', 'ok'); docsRefetchSoon(); })
+      .catch(()=> setDocsStatus('⚠️ បង្កើត Folder មិនបាន', 'warn', true));
+  });
+}
 (function initDocs(){
-  const open = document.getElementById('docsOpenDrive'); if(open) open.href = DOCS_FOLDER_URL;
   document.getElementById('docsSyncBtn').addEventListener('click', ()=> fetchDocs(false));
   document.getElementById('docsSearch').addEventListener('input', renderDocs);
   document.getElementById('docsTypeFilter').addEventListener('change', renderDocs);
+  document.getElementById('docsNewFolderBtn').addEventListener('click', docNewFolder);
   const input = document.getElementById('docsFileInput');
   document.getElementById('docsAddBtn').addEventListener('click', ()=> input.click());
   input.addEventListener('change', ()=>{ uploadDocs(input.files); input.value = ''; });
+  document.getElementById('docsCrumbs').addEventListener('click', e=>{
+    const b = e.target.closest('[data-crumb]'); if(b) docsGoTo(parseInt(b.dataset.crumb, 10));
+  });
   document.getElementById('docsGrid').addEventListener('click', e=>{
     const el = e.target.closest('[data-act]'); if(!el) return;
     const card = el.closest('.doc-card'); if(!card) return;
-    const f = docsFiles.find(x => x.id === card.dataset.id); if(!f) return;
+    const isFolder = card.dataset.type === 'folder';
+    const cur = docsCur();
+    const item = (isFolder ? cur.folders : cur.files).find(x => x.id === card.dataset.id); if(!item) return;
     const act = el.dataset.act;
-    if(act === 'open') window.open(docOpenUrl(f), '_blank', 'noopener');
-    else if(act === 'rename') docRenameDialog(f);
-    else if(act === 'delete') docDelete(f);
+    if(act === 'enter') docsEnter(item);
+    else if(act === 'open') window.open(docOpenUrl(item), '_blank', 'noopener');
+    else if(act === 'rename') docRename(item, isFolder);
+    else if(act === 'delete') docDelete(item, isFolder);
   });
   document.querySelector('.sb-item[data-page="docs"]').addEventListener('click', ()=>{ renderDocs(); docsMaybeFetch(); });
   renderDocs();
@@ -10261,7 +10343,60 @@ async function saveForm(){
     savedForms.push(data);
   }
   await persistSavedForms();
-  alert('បានរក្សាទុក! Saved.');
+  var driveMsg = '';
+  if(window.DRIVE_SAVE && window.DRIVE_SAVE.url){
+    var btn = document.getElementById('saveFormBtn'), oldLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ កំពុងបញ្ជូនទៅ Drive...';
+    try{ await uploadFormToDrive(data); driveMsg = '\\n☁️ បានបញ្ជូន PDF ទៅ Google Drive'; }
+    catch(e){ driveMsg = '\\n⚠️ បញ្ជូនទៅ Drive មិនបាន (' + (e && e.message ? e.message : e) + ')'; }
+    btn.disabled = false; btn.textContent = oldLabel;
+  }
+  alert('បានរក្សាទុក! Saved.' + driveMsg);
+}
+
+// ============================= save a PDF copy to Google Drive =============================
+function loadScriptOnce(src){
+  return new Promise(function(resolve, reject){
+    var el = document.createElement('script');
+    el.src = src; el.onload = resolve;
+    el.onerror = function(){ reject(new Error('Cannot load PDF library')); };
+    document.head.appendChild(el);
+  });
+}
+async function buildFormPdfBase64(){
+  if(!window.html2canvas) await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!(window.jspdf && window.jspdf.jsPDF)) await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  var sheet = document.getElementById('formSheet');
+  var canvas = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+  var pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  var pw = 210, ph = 297;
+  var pageHpx = Math.floor(canvas.width * ph / pw);
+  var y = 0, first = true;
+  while(y < canvas.height){
+    var sliceH = Math.min(pageHpx, canvas.height - y);
+    var part = document.createElement('canvas');
+    part.width = canvas.width; part.height = sliceH;
+    var ctx = part.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, part.width, part.height);
+    ctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+    if(!first) pdf.addPage();
+    pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pw, sliceH * pw / canvas.width);
+    first = false; y += sliceH;
+  }
+  return pdf.output('datauristring').split(',')[1];
+}
+async function uploadFormToDrive(data){
+  if(!navigator.onLine) throw new Error('គ្មានអ៊ីនធឺណិត');
+  var base64 = await buildFormPdfBase64();
+  var id = String(currentFormId || '').replace('form_', '');
+  var tag = (data.f_caseNo && String(data.f_caseNo).trim()) ? String(data.f_caseNo).trim() : id.slice(-6);
+  var filename = ('ទម្រង់ពិនិត្យ_' + String(data.f_name).trim() + '_' + tag + '.pdf').replace(/[\\/:*?"<>|]+/g, '-');
+  await fetch(window.DRIVE_SAVE.url, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'uploadDoc', data: { folderId: window.DRIVE_SAVE.folderId, filename: filename, mimeType: 'application/pdf', base64: base64, replace: true }, timestamp: Date.now() })
+  });
 }
 function renderHistory(){
   const list = document.getElementById('historyList');
@@ -10343,11 +10478,14 @@ function buildExamProgressRows(records){
   });
 }
 
+const EXAM_FORM_FOLDER_ID = '157i-o7dAzQlNsQrWBqy5_JoVdeT0hRcA';   // Google Drive folder that receives the saved exam forms (PDF)
 function openExamForm(prefill){
   const payload = JSON.stringify(prefill).replace(/</g, '\\u003c');
+  const driveCfg = JSON.stringify({ url: webAppUrl || '', folderId: EXAM_FORM_FOLDER_ID }).replace(/</g, '\\u003c');
   const injected = `
 <script>
 (function(){
+  window.DRIVE_SAVE = ${driveCfg};
   var PREFILL = ${payload};
   function apply(){ if(typeof applyFormData === 'function') applyFormData(PREFILL); }
   apply();
