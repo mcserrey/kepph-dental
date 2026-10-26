@@ -323,15 +323,10 @@
   }
 
   /* border colour = status of the patient's most recent dated activity */
-  .record-card.pc-done  { border:1px solid var(--border) !important; background:var(--surface) !important; }
-  .record-card.pc-appt  { border:1.8px solid #F28C28 !important; background:linear-gradient(90deg, rgba(242,140,40,0.12) 0%, var(--surface) 40%) !important; }
-  .record-card.pc-missed{ border:1.8px solid var(--coral) !important; background:linear-gradient(90deg, rgba(228,87,76,0.10) 0%, var(--surface) 40%) !important; }
-  .record-card.pc-labo  { border:1.8px solid #5B3FB8 !important; background:linear-gradient(90deg, rgba(91,63,184,0.08) 0%, var(--surface) 40%) !important; }
-  .record-card.pc-proc  { border:1.8px solid var(--primary) !important; background:linear-gradient(90deg, rgba(77,208,145,0.07) 0%, var(--surface) 40%) !important; }
-  .record-card.pc-done .appt-time .mono, .record-card.pc-done .appt-day { color:var(--ink-soft) !important; }
-  .record-card.pc-appt .appt-time .mono, .record-card.pc-appt .appt-day { color:#B85C00 !important; }
-  .record-card.pc-missed .appt-time .mono, .record-card.pc-missed .appt-day { color:var(--coral-dark) !important; }
-  .record-card.pc-labo .appt-time .mono, .record-card.pc-labo .appt-day { color:#5B3FB8 !important; }
+  .record-card.pc-done  { border:1px solid var(--border) !important; }
+  .record-card.pc-appt  { border:2px solid #2F7BEA !important; }
+  .record-card.pc-today { border:2px solid #22A06B !important; }
+  .record-card.pc-missed{ border:2px solid var(--coral) !important; }
   .sb-badge.today{background:#198754;color:#fff;}
 
   .empty-state{text-align:center;padding:44px 20px;color:var(--ink-dim);background:var(--surface);border:1.5px dashed var(--border);border-radius:14px;}
@@ -958,6 +953,17 @@
   #galleryLightbox{z-index:97 !important;background:rgba(4,14,32,.86) !important;align-items:center;padding:12px;}
   .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
   /* ===== Document library (card grid) ===== */
+  .opt-row{display:flex;align-items:center;gap:8px;background:#fff;padding:6px 8px;border-radius:8px;margin-bottom:5px;border:1px solid var(--border-soft);}
+  .opt-row.dragging{opacity:.4;}
+  .opt-row.drag-over{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft);}
+  .opt-grip{cursor:grab;color:var(--ink-dim);font-size:15px;letter-spacing:-3px;user-select:none;padding:0 4px;}
+  .opt-name{flex:1;font-size:12.5px;font-weight:600;word-break:break-word;}
+  .opt-edit{flex:1;padding:4px 8px;border:1.5px solid var(--primary);border-radius:6px;font-size:12.5px;outline:none;}
+  .opt-btns{display:flex;gap:4px;flex-shrink:0;}
+  .opt-btns button{border:1px solid var(--border);background:var(--surface-2);color:var(--ink);border-radius:6px;padding:2px 8px;font-size:11.5px;cursor:pointer;}
+  .opt-btns button:hover:not(:disabled){background:var(--primary-soft);border-color:var(--primary);}
+  .opt-btns button:disabled{opacity:.35;cursor:default;}
+  .opt-btns button.danger:hover{background:var(--coral-soft);border-color:var(--coral);color:var(--coral-dark);}
   .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
   .doc-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .15s ease, box-shadow .15s ease;}
   .doc-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);}
@@ -1297,6 +1303,12 @@
   .tk-greet{font-size:18px;font-weight:700;}
   .tk-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.6);border-radius:999px;padding:3px 12px;font-size:12.5px;font-weight:600;line-height:1.5;}
   .tk-chip b{font-weight:800;}
+  .tk-org{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.6);border-radius:999px;padding:3px 14px 3px 3px;line-height:1.15;}
+  .tk-ph{width:30px;height:30px;border-radius:50%;overflow:hidden;background:#fff;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.9);}
+  .tk-ph img{width:100%;height:100%;object-fit:cover;display:block;}
+  .tk-ph svg{width:16px;height:16px;stroke:var(--ink-soft);fill:none;stroke-width:2;}
+  .tk-org .tk-on{font-size:12.5px;font-weight:800;display:block;}
+  .tk-org .tk-or{font-size:10.5px;font-weight:600;opacity:.75;display:block;}
   .tk-chip .tk-up{color:#137A47;font-weight:800;} .tk-chip .tk-down{color:#B3261E;font-weight:800;} .tk-chip .tk-flat{color:#3A5578;font-weight:800;}
   @keyframes dashTick{from{transform:translateX(0);}to{transform:translateX(-50%);}}
   @media (prefers-reduced-motion:reduce){ .dash-ticker-track{animation:none;} .tk-group[aria-hidden="true"]{display:none;} .dash-greet{overflow-x:auto;} }
@@ -2791,7 +2803,7 @@ const DEFAULT_LISTS = {
     'Opening', 'Shaping and Cleaning', 'Dressing Calcium', 'Obturation', 'Scaling upper/lower',
     'Irrigation with NaOCl', 'Working length measurement', 'Tooth Extraction',
     'Suture', 'Composite Restoration', 'GIC Filling', 'Crown preparation',
-    'Impression taking', 'Crown cementation', 'Appointment', 'Labo', 'Done'
+    'Impression taking', 'Crown cementation', 'X-Ray', 'Appointment', 'Labo', 'Done'
   ],
   regcard: [
     'បង់ពេញថ្លៃ', 'លើកលែង', 'មូលនិធិសមធម៌ (ក្រីក្រ)', 'មូលនិធិសមធម៌ (ហានិភ័យ)',
@@ -2803,10 +2815,46 @@ const DEFAULT_LISTS = {
 let appCustomLists = JSON.parse(localStorage.getItem('dental_custom_lists_app')) || JSON.parse(JSON.stringify(DEFAULT_LISTS));
 let currentSettingTab = 'treatment';
 
-function saveCustomLists() {
-  localStorage.setItem('dental_custom_lists_app', JSON.stringify(appCustomLists));
-  populateAllSelectDropdowns();
-  renderCardTypeStats();
+const LISTS_TS_KEY = 'dental_custom_lists_ts';
+let listsPushTimer = null;
+function saveCustomLists(fromSheetTs) {
+  try{ localStorage.setItem('dental_custom_lists_app', JSON.stringify(appCustomLists)); }catch(e){}
+  try{ localStorage.setItem(LISTS_TS_KEY, String(fromSheetTs || Date.now())); }catch(e){}
+  try{ populateAllSelectDropdowns(); }catch(e){}
+  try{ renderCardTypeStats(); }catch(e){}
+  if(!fromSheetTs){            // a local change → keep it in the Google Sheet too, so it survives and reaches every device
+    clearTimeout(listsPushTimer);
+    listsPushTimer = setTimeout(pushCustomLists, 700);
+  }
+}
+function pushCustomLists(){
+  let ts = 0; try{ ts = parseInt(localStorage.getItem(LISTS_TS_KEY) || '0', 10) || 0; }catch(e){}
+  pushToSheet('collectionUpsert', {
+    sheet: 'OrgChart', id: 'lists:app', role: 'lists', name: '', photo: '',
+    description: JSON.stringify(appCustomLists), updated: new Date(ts || Date.now()).toISOString()
+  });
+}
+/* rows from the OrgChart sheet → the Treatment / Diagnosis / Procedure / Card lists (called from fetchOrgChart) */
+function listsMergeFromSheet(rows){
+  const r = rows.find(x => String(x.id || '') === 'lists:app');
+  const pending = getPendingQueue().some(q => q && q.data && q.data.sheet === 'OrgChart' && q.data.id === 'lists:app');
+  if(pending) return;
+  let lts = 0; try{ lts = parseInt(localStorage.getItem(LISTS_TS_KEY) || '0', 10) || 0; }catch(e){}
+  if(!r){
+    if(JSON.stringify(appCustomLists) !== JSON.stringify(DEFAULT_LISTS)){ saveCustomLists(); }   // customised before the sheet knew → upload once
+    return;
+  }
+  let remote = null;
+  try{ remote = JSON.parse(String(r.description || '')); }catch(e){}
+  if(!remote || typeof remote !== 'object') return;
+  const rts = Date.parse(r.updated) || 0;
+  if(rts > lts + 5000){
+    Object.keys(DEFAULT_LISTS).forEach(k => { if(Array.isArray(remote[k])) appCustomLists[k] = remote[k].map(String); });
+    saveCustomLists(rts || 1);
+    try{ renderOptionsList(); }catch(e){}
+  }else if(lts > rts + 1000){
+    pushCustomLists();
+  }
 }
 
 function switchSettingTab(tabKey, btnElement) {
@@ -2828,12 +2876,89 @@ function renderOptionsList() {
   }
 
   container.innerHTML = items.map((item, idx) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:7px 12px; border-radius:6px; margin-bottom:5px; border:1px solid var(--border-soft);">
-      <span class="kh" style="font-size:12.5px; font-weight:600;">${item}</span>
-      <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeCustomOption(${idx})">✕ លុប</button>
+    <div class="opt-row" draggable="true" data-idx="${idx}">
+      <span class="opt-grip" title="អូសដើម្បីប្តូរលំដាប់ · Drag to reorder">⋮⋮</span>
+      <span class="opt-name kh">${esc(item)}</span>
+      <span class="opt-btns">
+        <button type="button" data-oa="up" title="ឡើងលើ" ${idx === 0 ? 'disabled' : ''}>▲</button>
+        <button type="button" data-oa="down" title="ចុះក្រោម" ${idx === items.length - 1 ? 'disabled' : ''}>▼</button>
+        <button type="button" data-oa="edit" title="កែ">✏️</button>
+        <button type="button" data-oa="del" class="danger" title="លុប">✕</button>
+      </span>
     </div>
   `).join('');
 }
+
+function moveCustomOption(from, to) {
+  const arr = appCustomLists[currentSettingTab];
+  if (!arr || from === to || from < 0 || to < 0 || from >= arr.length || to >= arr.length) return;
+  const [it] = arr.splice(from, 1);
+  arr.splice(to, 0, it);
+  saveCustomLists();
+  renderOptionsList();
+}
+
+function editCustomOption(idx, rowEl) {
+  const arr = appCustomLists[currentSettingTab];
+  const old = arr[idx];
+  const nameEl = rowEl.querySelector('.opt-name');
+  const input = document.createElement('input');
+  input.type = 'text'; input.value = old; input.className = 'opt-edit kh';
+  nameEl.replaceWith(input);
+  rowEl.draggable = false;
+  input.focus(); input.select();
+  let done = false;
+  const finish = (commit) => {
+    if (done) return; done = true;
+    const nv = input.value.trim();
+    if (commit && nv && nv !== old) {
+      if (arr.some((x, i) => i !== idx && x === nv)) { renderOptionsList(); return; }   // name already in the list
+      arr[idx] = nv;
+      saveCustomLists();
+    }
+    renderOptionsList();
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') finish(true); else if (e.key === 'Escape') finish(false); });
+  input.addEventListener('blur', () => finish(true));
+}
+
+(function initOptionsListEditor(){
+  const box = document.getElementById('optionsListContainer');
+  let dragIdx = -1;
+  box.addEventListener('click', e => {
+    const btn = e.target.closest('[data-oa]'); if (!btn || btn.disabled) return;
+    const row = btn.closest('.opt-row'); if (!row) return;
+    const idx = parseInt(row.dataset.idx, 10);
+    const act = btn.dataset.oa;
+    if (act === 'up') moveCustomOption(idx, idx - 1);
+    else if (act === 'down') moveCustomOption(idx, idx + 1);
+    else if (act === 'edit') editCustomOption(idx, row);
+    else if (act === 'del') removeCustomOption(idx);
+  });
+  box.addEventListener('dragstart', e => {
+    const row = e.target.closest && e.target.closest('.opt-row'); if (!row) return;
+    dragIdx = parseInt(row.dataset.idx, 10);
+    row.classList.add('dragging');
+    try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragIdx)); } catch (err) {}
+  });
+  box.addEventListener('dragover', e => {
+    const row = e.target.closest && e.target.closest('.opt-row'); if (!row || dragIdx < 0) return;
+    e.preventDefault();
+    box.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+    row.classList.add('drag-over');
+  });
+  box.addEventListener('drop', e => {
+    const row = e.target.closest && e.target.closest('.opt-row'); if (!row || dragIdx < 0) return;
+    e.preventDefault();
+    const to = parseInt(row.dataset.idx, 10), from = dragIdx;
+    dragIdx = -1;
+    moveCustomOption(from, to);
+  });
+  box.addEventListener('dragend', () => {
+    dragIdx = -1;
+    box.querySelectorAll('.dragging,.drag-over').forEach(x => x.classList.remove('dragging', 'drag-over'));
+  });
+})();
 
 function addNewCustomOption() {
   const input = document.getElementById('newOptionInput');
@@ -2900,6 +3025,9 @@ function populateAllSelectDropdowns() {
 }
 
 document.getElementById('listsSettingBtn').addEventListener('click', () => {
+  const tabs = document.querySelectorAll('.opt-tab');
+  const order = ['treatment', 'diagnosis', 'procedure', 'regcard'];
+  tabs.forEach((b, i) => { b.className = 'btn btn-sm kh opt-tab ' + (order[i] === currentSettingTab ? 'btn-primary' : 'btn-ghost'); });
   renderOptionsList();
   document.getElementById('listsSettingOverlay').classList.remove('hidden');
 });
@@ -3048,12 +3176,37 @@ function renderCardTypeStats() {
   renderDashBars('cardTypeStatsRow', 'cardTypeTotal', counts, c => CARD_BAR_COLORS[getCardTypeBadgeClass(c)] || 'var(--primary)', 'card');
 }
 
+/* Treatments a record counts for: its own Treatment + "ថតធ្មេញ X-ray" when any of its steps is an
+   X-Ray / XRay procedure (so X-rays taken during other treatments are counted and reported too). */
+const XRAY_TREATMENT = 'ថតធ្មេញ X-ray';
+const XRAY_RE = /x[\s\-_]?ray/i;
+/* Procedure choices for Add Step / Edit Step = the Settings list, and an "X-Ray" choice is always offered
+   (it can never go missing, whatever happened to the saved list). */
+function procedureChoices(){
+  const list = (appCustomLists.procedure || []).slice();
+  if(!list.some(p => XRAY_RE.test(String(p)))){
+    const at = list.findIndex(p => stepKind(p) !== 'normal');   // keep it before Appointment / Labo / Done
+    list.splice(at < 0 ? list.length : at, 0, 'X-Ray');
+  }
+  return list;
+}
+function recordTreatments(r){
+  const out = [];
+  const t = cleanStr(r.treatment);
+  if(t && t !== '—' && t !== 'custom') out.push(t);
+  let hasX = out.some(x => XRAY_RE.test(x));
+  if(!hasX){
+    try{ hasX = stepsArray(r).some(st => XRAY_RE.test(String(st.name || ''))); }catch(e){}
+    if(hasX) out.push(XRAY_TREATMENT);
+  }
+  return out;
+}
+
 // ២. Treatment statistics
 function renderTreatmentStats() {
   const counts = {};
   dashScopedRecords().forEach(r=>{
-    const t = cleanStr(r.treatment);
-    if(t && t !== '—' && t !== 'custom') counts[t] = (counts[t] || 0) + 1;
+    recordTreatments(r).forEach(t => { counts[t] = (counts[t] || 0) + 1; });
   });
   renderDashBars('treatmentStatsRow', 'treatmentTotal', counts, () => 'var(--primary)', 'treatment');
 }
@@ -3073,8 +3226,7 @@ function dashTreatmentTally(from, to){
   let total = 0;
   allRecords.forEach(r=>{
     if(!recordVisitedWhere(r, d => { const t = d.getTime(); return t >= a && t < b; })) return;
-    const tr = cleanStr(r.treatment);
-    if(tr && tr !== '—' && tr !== 'custom'){ tx[tr] = (tx[tr] || 0) + 1; total++; }
+    recordTreatments(r).forEach(tr => { tx[tr] = (tx[tr] || 0) + 1; total++; });
   });
   return { tx, total };
 }
@@ -3099,7 +3251,18 @@ function renderDashHero(){
   const h = new Date().getHours();
   const hello = h < 12 ? 'អរុណសួស្តី' : h < 17 ? 'ទិវាសួស្តី' : 'សាយណ្ហសួស្តី';
   const name = (clinicInfo && clinicInfo.name) || 'Dental Service';
-  const group = (hidden) => `<span class="tk-group"${hidden ? ' aria-hidden="true"' : ''}><span class="tk-greet">${esc(hello)} · ${esc(name)}</span>${dashCompareChips()}</span>`;
+  /* organisation chart (ប្រធានផ្នែក · នាយសាល · សមាជិក) — small round photo + name + role */
+  let orgChips = '';
+  try{
+    orgChips = ORG_IDS.map(id => {
+      const it = orgData[id];
+      if(!it || !cleanStr(it.name)) return '';
+      const src = it.photo ? orgPhotoSrc(it.photo) : '';
+      const ph = src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="orgPhotoFallback(this)">` : ORG_PLACEHOLDER_SVG;
+      return `<span class="tk-org kh"><span class="tk-ph">${ph}</span><span class="tk-on">${esc(it.name)}</span></span>`;
+    }).join('');
+  }catch(e){ orgChips = ''; }   // org module not initialised yet
+  const group = (hidden) => `<span class="tk-group"${hidden ? ' aria-hidden="true"' : ''}><span class="tk-greet">${esc(hello)} · ${esc(name)}</span>${orgChips}${dashCompareChips()}</span>`;
   const html = `<div class="dash-ticker-track">${group(false)}${group(true)}</div>`;
   if(g.dataset.sig !== html){
     g.dataset.sig = html;
@@ -3957,8 +4120,7 @@ function renderThisMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === currentMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        let treat = cleanStr(r.treatment);
-        if (treat && treat !== '—') treatCounts[treat] = (treatCounts[treat] || 0) + 1;
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4041,8 +4203,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        let treat = cleanStr(r.treatment);
-        if (treat && treat !== '—') treatCounts[treat] = (treatCounts[treat] || 0) + 1;
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4130,6 +4291,16 @@ function renderTrend14(){
   const curPats = new Set(); cur.forEach(x => x.pats.forEach(p => curPats.add(p)));
   const workDays = cur.filter(x => x.visits > 0).length;
   const busiest = cur.reduce((a, x) => x.visits > a.visits ? x : a, cur[0]);
+  /* new patients = first-ever visit falls inside the window */
+  const firstSeen = new Map();
+  allRecords.forEach(r => {
+    if(!cleanStr(r.name)) return;
+    const pk = patientKey(r);
+    recordVisitDates(r).forEach(d => { const t = d.getTime(); if(!firstSeen.has(pk) || t < firstSeen.get(pk)) firstSeen.set(pk, t); });
+  });
+  const curStartT = cur[0].d.getTime(), prevStartT = prev[0].d.getTime(), endT = cur[cur.length - 1].d.getTime() + 86400000;
+  let curNew = 0, prevNew = 0;
+  firstSeen.forEach(t => { if(t >= curStartT && t < endT) curNew++; else if(t >= prevStartT && t < curStartT) prevNew++; });
   const fmtD = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
   const pct = (c, p) => {
     if(!p) return c ? '<span class="cd up">▲ ថ្មី</span>' : '<span class="cd same">= 0</span>';
@@ -4143,7 +4314,9 @@ function renderTrend14(){
     <div class="trend-stat"><div class="ts-l kh">អ្នកជំងឺ · Patients</div><div class="ts-v">${curPats.size}</div>
       <div class="ts-s kh">ខុសៗគ្នា ក្នុង ១៤ ថ្ងៃ</div></div>
     <div class="trend-stat"><div class="ts-l kh">មធ្យម/ថ្ងៃធ្វើការ · Avg/day</div><div class="ts-v">${workDays ? (curVisits / workDays).toFixed(1) : '0'}</div>
-      <div class="ts-s kh">${workDays} ថ្ងៃមានអ្នកជំងឺ${busiest.visits ? ` · ច្រើនបំផុត ${fmtD(busiest.d)} (${busiest.visits})` : ''}</div></div>`;
+      <div class="ts-s kh">${workDays} ថ្ងៃមានអ្នកជំងឺ${busiest.visits ? ` · ច្រើនបំផុត ${fmtD(busiest.d)} (${busiest.visits})` : ''}</div></div>
+    <div class="trend-stat"><div class="ts-l kh">អ្នកជំងឺថ្មី · New patients</div><div class="ts-v">${curNew}</div>
+      <div class="ts-s kh">${pct(curNew, prevNew)} ធៀប ១៤ ថ្ងៃមុន · មកលើកដំបូង</div></div>`;
 
   // ---- SVG chart ----
   const W = 760, H = 230, L = 34, R = 50, T = 18, B = 40;
@@ -4220,8 +4393,7 @@ function renderTodayYesterdayStats() {
       if(!keys.includes(key)) return;
       bucket.cases++;
       bucket.patients.set(patientKey(r), r);
-      const tr = cleanStr(r.treatment);
-      if(tr && tr !== '—') bucket.treat[tr] = (bucket.treat[tr] || 0) + 1;
+      recordTreatments(r).forEach(tr => { bucket.treat[tr] = (bucket.treat[tr] || 0) + 1; });
       const ty = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
       bucket.card[ty] = (bucket.card[ty] || 0) + 1;
     });
@@ -4317,8 +4489,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        let treat = cleanStr(r.treatment);
-        if (treat && treat !== '—') treatCounts[treat] = (treatCounts[treat] || 0) + 1;
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4397,10 +4568,7 @@ function renderYesterdayStats(){
     if (sex === 'M' || sex.includes('ប្រុស')) male++;
     else female++;
 
-    let treat = cleanStr(r.treatment);
-    if (treat && treat !== '—') {
-      treatCounts[treat] = (treatCounts[treat] || 0) + 1;
-    }
+    recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
 
     let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
     cardCounts[type] = (cardCounts[type] || 0) + 1;
@@ -4589,22 +4757,44 @@ function renderList(){
   applyListRowLimits();
 }
 
-/* LATEST step of a patient across all of their records.
-   Ordered by date + hour + minute; if two steps share the exact same minute the newer record
-   (then the later step in the list) wins. */
+/* STATUS of a patient — one rule:
+   • a record's status is its LAST step (what the Full Dental Record shows);
+   • across the patient's records the status with the latest date + hour + minute wins;
+   • an Appointment that was kept (another record has real work on/after that appointment's day)
+     no longer counts, so a patient who already came is not shown as "waiting" or "missed". */
 function patientLatestStep(list){
-  let best = null;
+  const cands = [], performed = [];
   list.forEach(r => {
     const rd = parseAnyDate(r.timestamp);
     const rt = rd ? rd.getTime() : 0;
-    stepsArray(r).forEach((st, i) => {
-      const d = parseAnyDate(st.datetime);
-      if(!d) return;
-      const t = d.getTime();
-      if(!best || t > best.t || (t === best.t && (rt > best.rt || (rt === best.rt && i >= best.i)))){
-        best = { r, step: st, d, t, rt, i, kind: stepKind(st.name) };
+    const steps = stepsArray(r);
+    if(steps.length && steps[steps.length - 1].id !== 'legacy'){
+      steps.forEach(st => {
+        if(stepKind(st.name) === 'appt') return;
+        const d = parseAnyDate(st.datetime) || parseAnyDate(r.doingDateTime) || rd;
+        if(d) performed.push({ r, t: d.getTime() });
+      });
+      const st = steps[steps.length - 1];
+      const d = parseAnyDate(st.datetime) || parseAnyDate(r.doingDateTime) || rd;
+      if(d) cands.push({ r, step: st, d, rt, kind: stepKind(st.name) });
+    }else{
+      const stt = recomputeStatusFromSteps(r);
+      const kind = stt === 'Done' ? 'done' : stt === 'Appt' ? 'appt' : stt === 'Labo' ? 'labo' : 'normal';
+      const d = parseAnyDate(kind === 'appt' ? (r.timeLast || r.doingDateTime || r.timestamp) : (r.doingDateTime || r.timestamp));
+      if(d){
+        cands.push({ r, step: { name: cleanStr(r.doing), note: cleanStr(r.planDo) }, d, rt, kind });
+        if(kind !== 'appt') performed.push({ r, t: d.getTime() });
       }
-    });
+    }
+  });
+  let best = null;
+  cands.forEach(c => {
+    if(c.kind === 'appt'){
+      const day0 = new Date(c.d.getFullYear(), c.d.getMonth(), c.d.getDate()).getTime();
+      if(performed.some(p => p.r !== c.r && p.t >= day0)) return;   // appointment was kept
+    }
+    c.t = c.d.getTime();
+    if(!best || c.t > best.t || (c.t === best.t && c.rt >= best.rt)) best = c;
   });
   return best;
 }
@@ -4642,10 +4832,17 @@ function getPatientLatestState(p, startOfToday){
     const d = parseAnyDate(stt === 'Appt' ? (r.timeLast || r.doingDateTime || r.timestamp) : (r.doingDateTime || r.timestamp)) || startOfToday;
     best = { d, kind: stt === 'Done' ? 'done' : stt === 'Appt' ? 'appt' : stt === 'Labo' ? 'labo' : 'normal' };
   }
-  let key = statusBadgeKey(best.kind, best.d, startOfToday);
-  if(key === 'proc') key = 'missed';   /* last step is a plain procedure = Missing (ខកខាន) → red */
-  /* Done = no colour (neutral card) */
-  const badge = key === 'done' ? 'background:var(--surface-2);color:var(--ink-soft);border-color:var(--border);' : STATUS_BADGE_STYLES[key];
+  /* Colour ONLY when the latest status says so: Appointment → orange (red when the date has passed),
+     explicit Miss / ខកខាន → red. Anything else (Done, Labo, plain procedure…) stays colourless like Done. */
+  const nm = best.step ? cleanStr(best.step.name) : cleanStr(p.latest.status);
+  let key;
+  if(best.kind === 'appt'){
+    const tEnd = new Date(startOfToday.getTime() + 86400000);
+    key = !best.d ? 'appt' : best.d < startOfToday ? 'missed' : best.d < tEnd ? 'today' : 'appt';   /* past = red · today = green · later = blue */
+  }
+  else if(/miss|ខកខាន/i.test(nm)) key = 'missed';
+  else key = 'done';
+  const badge = 'background:var(--surface-2);color:var(--ink-soft);border-color:var(--border);';   /* only the card border is coloured */
   return { cls: 'pc-' + key, badge, date: best.d };
 }
 
@@ -4698,7 +4895,7 @@ function renderDoDetailBody(r){
     const nameCls = kind === 'done' ? 'dd-step-name-done' : kind === 'appt' ? 'dd-step-name-appt' : kind === 'labo' ? 'dd-step-name-labo' : '';
     const canDelete = i > 0;
     if(ddEditingStepId && st.id === ddEditingStepId){
-      const list = (appCustomLists.procedure || []).slice();
+      const list = procedureChoices();
       if(st.name && !list.includes(st.name)) list.unshift(st.name);
       const opts = list.map(p => `<option value="${esc(p)}"${p === st.name ? ' selected' : ''}>${esc(p)}</option>`).join('') + '<option value="__custom__">✎ ផ្សេង / Custom…</option>';
       return `<div class="dd-step-row">
@@ -4725,7 +4922,7 @@ function renderDoDetailBody(r){
     </div>`;
   }).join('');
 
-  const procOpts = (appCustomLists.procedure || []).map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  const procOpts = procedureChoices().map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
 
   document.getElementById('doDetailBody').innerHTML = `
     <div class="dd-meta kh">ធ្មេញ: <b>${esc(r.teeth) || '—'}</b> · ${dateStr}</div>
@@ -4816,6 +5013,20 @@ function flashAutoSaved(){
   flashAutoSaved._t = setTimeout(()=> el.classList.remove('show'), 1800);
 }
 /* edit one step in place and save straight away (local + Google Sheet) */
+/* keep the steps in date + hour + minute order (oldest first, newest last). A step without a
+   date stays right after the step before it. The sort is stable, so equal times keep their order. */
+function sortStepsChrono(steps){
+  let carry = -Infinity;
+  const keyed = steps.map((st, i) => {
+    const d = parseAnyDate(st.datetime);
+    const k = d ? d.getTime() : carry;
+    carry = k;
+    return { st, k, i };
+  });
+  keyed.sort((a, b) => (a.k - b.k) || (a.i - b.i));
+  return keyed.map(x => x.st);
+}
+
 function updateStep(id, stepId, patch){
   const idx = allRecords.findIndex(x=>x._id===id || x.code===id);
   if(idx === -1) return null;
@@ -4823,6 +5034,7 @@ function updateStep(id, stepId, patch){
   const st = steps.find(s => s.id === stepId);
   if(!st) return null;
   Object.assign(st, patch);
+  if(patch && Object.prototype.hasOwnProperty.call(patch, 'datetime')) steps.splice(0, steps.length, ...sortStepsChrono(steps));   // date changed → re-order
   allRecords[idx].steps = JSON.stringify(steps);
   allRecords[idx].doing = steps[0].name;
   allRecords[idx].doingDateTime = steps[0].datetime;
@@ -4910,6 +5122,7 @@ function addStep(id){
   const steps = stepsArray(allRecords[idx]);
   const newStep = { id: genStepId(), name: procSel, datetime: dt ? formatDateDisplay(dt) : '', note };
   steps.push(newStep);
+  steps.splice(0, steps.length, ...sortStepsChrono(steps));   // newest by date + time goes last
   allRecords[idx].steps = JSON.stringify(steps);
   allRecords[idx].doing = steps[0].name;
   allRecords[idx].doingDateTime = steps[0].datetime;
@@ -6342,7 +6555,7 @@ function exportMonthlyReportPDF() {
     let sumU15 = 0, sumO15 = 0, sumFemale = 0;
 
     let tableHtml = rowsConfig.map((row, idx) => {
-        const filteredTx = records.filter(r => cleanStr(r.treatment) === row.match || cleanStr(r.treatment).includes(row.match));
+        const filteredTx = records.filter(r => recordTreatments(r).some(t => t === row.match || t.includes(row.match)));
         const st = getStats(filteredTx);
         if (typeof st.u15 === 'number') sumU15 += st.u15;
         if (typeof st.o15 === 'number') sumO15 += st.o15;
@@ -6603,10 +6816,7 @@ function applyReportFilter() {
 
         filtered.forEach(r => {
           tPatientsMap.set(patientKey(r), r);
-          let treat = cleanStr(r.treatment);
-          if (treat && treat !== '—') {
-            treatCounts[treat] = (treatCounts[treat] || 0) + 1;
-          }
+          recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
 
           let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
           cardCounts[type] = (cardCounts[type] || 0) + 1;
@@ -6733,9 +6943,9 @@ function renderDiseaseListTable(records) {
         let isM = (sex === 'M' || sex.includes('ប្រុស')) ? '✓' : '';
         let isF = (sex === 'F' || sex.includes('ស្រី')) ? '✓' : '';
         
-        let tx = cleanStr(r.treatment);
+        const txList = recordTreatments(r);
         let has = (matchTxt) => {
-            if (!(tx === matchTxt || (tx.includes(matchTxt) && tx !== 'custom'))) return '';
+            if (!txList.some(tx => tx === matchTxt || tx.includes(matchTxt))) return '';
             txCounters[matchTxt] = (txCounters[matchTxt] || 0) + 1;
             return `<b class="mono">${txCounters[matchTxt]}</b>`;
         };
@@ -9311,6 +9521,7 @@ function orgPhotoFallback(imgEl){ if(imgEl && imgEl.parentElement) imgEl.parentE
 
 function renderOrgChart(){
   try{ renderCertCounts(); }catch(e){}   // certificates module may not be initialised yet
+  try{ renderDashHero(); }catch(e){}     // the dashboard ticker shows the org chart photos
   ORG_IDS.forEach(id=>{
     const it = orgData[id];
     const photoEl = document.getElementById('orgPhoto-' + id);
@@ -9357,6 +9568,7 @@ async function fetchOrgChart(silent){
       orgData[r.id] = { name: cleanStr(r.name), photo: cleanStr(r.photo), description: String(r.description || '').trim(), role: cleanStr(r.role), updated: cleanStr(r.updated) };
     });
     certMergeFromSheet(json.data);
+    listsMergeFromSheet(json.data);
     orgFetchedAt = Date.now();
     orgSave(); renderOrgChart();
     orgSetStatus('✓ Sync ជោគជ័យ', 'ok', true);
@@ -9444,6 +9656,8 @@ function saveOrgForm(){
   closeOrgForm();
 }
 
+/* load the org chart + shared lists once shortly after start (ticker photos, Settings lists) */
+setTimeout(()=>{ try{ fetchOrgChart(true); }catch(e){} }, 2500);
 (function initOrgChart(){
   orgLoad();
   renderOrgChart();
