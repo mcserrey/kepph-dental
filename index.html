@@ -3945,18 +3945,28 @@ function getAppointments(){
         const dt = parseAnyDate(step.datetime || r.doingDateTime || r.timestamp);
         if(!inRange(dt)) return;
         /* every step dated in the window is an activity (Done / Labo included);
-           an Appointment step only counts when its date is today (future ones stay in Appointments) */
-        if(k === 'appt' && !sameDay(dt, now)) return;
-        todayProcList.push({r, d: dt, stepName: step.name, stepNote: step.note, status: latestStatusByPatient.get(patientKey(r))});
+           an Appointment step is never a procedure — it belongs to the Appointments panel */
+        if(k === 'appt') return;
+        /* each row shows ITS OWN step: Treatment - [step: Done / Labo / procedure name] - note */
+        const label = k === 'done' ? 'Done' : k === 'labo' ? 'Labo' : (cleanStr(step.name) || 'Procedure');
+        todayProcList.push({r, d: dt, stepName: step.name, stepNote: step.note, status: {label, kind: k, d: dt, note: cleanStr(step.note)}});
       });
     } else {
       const dt = parseAnyDate(r.doingDateTime || r.timestamp);
-      if(inRange(dt)) todayProcList.push({r, d: dt, status: latestStatusByPatient.get(patientKey(r))});
+      if(inRange(dt) && recomputeStatusFromSteps(r) !== 'Appt') todayProcList.push({r, d: dt, status: latestStatusByPatient.get(patientKey(r))});
     }
   });
   todayProcList.sort((a,b)=>b.d - a.d);
+  /* rows that would read exactly the same (same patient, day, treatment, status and note) are shown once */
+  const seenProc = new Set();
+  const procRows = todayProcList.filter(it => {
+    const k = [patientKey(it.r), it.d.getFullYear(), it.d.getMonth(), it.d.getDate(), cleanStr(it.r.treatment),
+               it.status ? it.status.label : '', cleanStr(it.stepNote)].join('|');
+    if(seenProc.has(k)) return false;
+    seenProc.add(k); return true;
+  });
 
-  return {todayList, todayProcList};
+  return {todayList, todayProcList: procRows};
 }
 
 function dashTimeStr(d){
@@ -3977,12 +3987,14 @@ function dashDayLabel(d){
 }
 
 /* Status chip (latest status of the patient) + note, shared by both Schedule panels */
-function scheduleBadgeHTML(item, noteText){
+function scheduleBadgeHTML(item, noteText, treatment){
   const st = item.status;
   const note = cleanStr(noteText);
-  if(!st) return `📋 ${esc(noteText)}`;
-  /* format: Status (latest) - note — no date / time */
-  return `<span style="font-weight:800;">${esc(st.label)}</span>${note ? ` - <span style="font-weight:600;">${esc(note)}</span>` : ''}`;
+  const tr = cleanStr(treatment);
+  const trHTML = tr && tr !== '—' ? `<span style="font-weight:700;">${esc(tr)}</span> - ` : '';
+  if(!st) return `${trHTML}${note ? '📋 ' + esc(note) : ''}`;
+  /* format: [Treatment - ]Status (latest) [- note] — no date / time */
+  return `${trHTML}<span style="font-weight:800;">${esc(st.label)}</span>${note ? ` - <span style="font-weight:600;">${esc(note)}</span>` : ''}`;
 }
 function scheduleBadgeStyle(item, fallback){
   const st = item.status;
@@ -4030,7 +4042,7 @@ function renderProcRow(item){
         <div class="appt-meta">${formatPhoneDisplay(r.phone)||'គ្មានលេខ'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>
       </div>
       <div class="appt-plan-badge kh" style="${scheduleBadgeStyle(item, 'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(34,188,203,0.4);')}" title="Status: ${item.status ? esc(item.status.label) : ''} · Procedure: ${esc(planText)}">
-        ${scheduleBadgeHTML(item, planText)}
+        ${scheduleBadgeHTML(item, cleanStr(item.stepNote), r.treatment)}
       </div>
     </div>`;
 }
