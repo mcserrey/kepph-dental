@@ -3179,7 +3179,13 @@ function renderCardTypeStats() {
 /* Treatments a record counts for: its own Treatment + "ថតធ្មេញ X-ray" when any of its steps is an
    X-Ray / XRay procedure (so X-rays taken during other treatments are counted and reported too). */
 const XRAY_TREATMENT = 'ថតធ្មេញ X-ray';
-const XRAY_RE = /x[\s\-_]?ray/i;
+const XRAY_RE = /x[\s\-_–—]?ray/i;
+/* A procedure (step) name that also counts as a Treatment: [pattern, treatment] */
+const STEP_TREATMENT_RULES = [
+  [XRAY_RE, XRAY_TREATMENT],
+  [/restoration.*amalgam|amalgam.*restoration/i, 'ប៉ះធ្មេញ Amalgam'],      // RCT-Restoration Amalgam
+  [/restoration.*composite|composite.*restoration/i, 'ប៉ះធ្មេញ Composite']  // RCT-Restoration Composite
+];
 /* Procedure choices for Add Step / Edit Step = the Settings list, and an "X-Ray" choice is always offered
    (it can never go missing, whatever happened to the saved list). */
 function procedureChoices(){
@@ -3190,15 +3196,20 @@ function procedureChoices(){
   }
   return list;
 }
+/* Treatments a record counts for: its own Treatment, plus the treatments implied by its procedures
+   (X-Ray step → ថតធ្មេញ X-ray · Restoration Amalgam → ប៉ះធ្មេញ Amalgam · Restoration Composite → ប៉ះធ្មេញ Composite).
+   Any spelling of X-Ray (XRay / X-ray / x ray) is normalised to the one X-ray treatment. */
 function recordTreatments(r){
   const out = [];
-  const t = cleanStr(r.treatment);
-  if(t && t !== '—' && t !== 'custom') out.push(t);
-  let hasX = out.some(x => XRAY_RE.test(x));
-  if(!hasX){
-    try{ hasX = stepsArray(r).some(st => XRAY_RE.test(String(st.name || ''))); }catch(e){}
-    if(hasX) out.push(XRAY_TREATMENT);
-  }
+  const add = t => { if(t && !out.includes(t)) out.push(t); };
+  const own = cleanStr(r.treatment);
+  if(own && own !== '—' && own !== 'custom') add(XRAY_RE.test(own) ? XRAY_TREATMENT : own);
+  try{
+    stepsArray(r).forEach(st => {
+      const nm = String(st.name || '');
+      STEP_TREATMENT_RULES.forEach(([re, tr]) => { if(re.test(nm)) add(tr); });
+    });
+  }catch(e){}
   return out;
 }
 
