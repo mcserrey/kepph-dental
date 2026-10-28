@@ -6602,11 +6602,16 @@ function exportMonthlyReportPDF() {
     let totalPatientsFemale = 0;
     let totalU15PatientsFemale = 0;
 
+    /* treatment cases: every record counts once, plus each additional treatment its procedures imply
+       (X-Ray step → ថតធ្មេញ X-ray, Restoration Amalgam/Composite → ប៉ះធ្មេញ …) */
+    let totalCasesCount = 0;
     records.forEach(r => {
         totalPatientsMap.set(patientKey(r), r);
         let sex = String(r.sex || '').toUpperCase();
         let isFemale = sex === 'F' || sex.includes('ស្រី');
-        if (isFemale) totalCasesFemale++;
+        const caseN = Math.max(1, recordTreatments(r).length);
+        totalCasesCount += caseN;
+        if (isFemale) totalCasesFemale += caseN;
 
         let ageNum = parseInt(r.age, 10);
         if (!isNaN(ageNum) && ageNum < 15) {
@@ -6632,7 +6637,6 @@ function exportMonthlyReportPDF() {
         }
     });
 
-    const totalCasesCount = records.length;
     const totalPatientsCount = totalPatientsMap.size;
     const totalU15PatientsCount = totalU15PatientsMap.size;
 
