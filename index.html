@@ -6846,11 +6846,12 @@ function buildMorningCardsHTML(){
 .mrc .mrc-sep{height:1px;background:var(--border-soft);margin:10px 0;}
 </style>
 <div class="mrc-title kh"><h2>របាយការណ៍ផ្នែកសេវាជំងឺមាត់ធ្មេញ</h2><small>${esc((clinicInfo && clinicInfo.name) || 'Kep Hospital-Dental Service')} - Dental Brief Reports</small></div>
-<div class="mrc-date kh">របាយការណ៍ព្រឹក ${esc(morningDayLabel(D.apptDay))} · ទិន្នន័យ ${esc(morningDayLabel(D.day))}</div>
+<div class="mrc-date kh">${esc(morningDayLabel(D.apptDay))} · ទិន្នន័យ (${esc(`${String(D.day.getDate()).padStart(2,'0')}/${String(D.day.getMonth()+1).padStart(2,'0')}/${D.day.getFullYear()}`)})</div>
 
-<div class="mrc-sec"><h3 class="kh">១. អ្នកជំងឺ</h3>
+<div class="mrc-sec"><h3 class="kh">១. សរុបរួម</h3>
   ${grid(
-    card('', 'សរុប (Total)', D.patients, big) +
+    card('', 'សរុបជំងឺ (Total)', D.patients, big) +
+    card('', 'សរុបករណី (Case)', D.cases, big) +
     card('type-red', 'ស្រី (Female)', D.female) +
     card('type-blue', 'ប្រុស (Male)', D.male) +
     card('type-yellow', 'ក្មេង (ស្មើឬក្រោម១៥)', D.kids) +
@@ -6859,8 +6860,7 @@ function buildMorningCardsHTML(){
 </div>
 
 <div class="mrc-sec"><h3 class="kh">២. ករណី</h3>
-  ${grid(card('', 'សរុប (Case)', D.cases, big))}
-  ${txKeys.length ? `<div class="mrc-sep"></div><div class="card-type-stats-grid" style="gap:10px;">${txKeys.map(t => `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(t)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${D.tx[t]}</div></div>`).join('')}</div>` : ''}
+  ${txKeys.length ? `<div class="card-type-stats-grid" style="gap:10px;">${txKeys.map(t => `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(t)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${D.tx[t]}</div></div>`).join('')}</div>` : ''}
 </div>
 
 <div class="mrc-sec"><h3 class="kh">៣. ការទូទាត់</h3>
