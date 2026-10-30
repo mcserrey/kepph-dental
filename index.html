@@ -1815,7 +1815,6 @@
           <button class="btn btn-primary btn-sm kh" onclick="exportMonthlyReportPDF()" style="background-color: #16A34A; border-color: #15803D;">📄 Report</button>
         </div>
         <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
-          <button class="btn btn-primary btn-sm kh" onclick="openMorningReport()" style="background-color: #0E7490; border-color: #0E7490;">☀️ រាយការណ៍ពេលព្រឹក</button>
           <button class="btn btn-primary btn-sm kh" onclick="openDiseaseListModal()" style="background-color: var(--amber-dark); border-color: var(--amber-dark);">📋 បញ្ជីជំងឺ (DHIS2)</button>
           <button class="btn btn-primary btn-sm kh" onclick="exportAllToPdf()" style="background-color: var(--coral); border-color: var(--coral);">📄 បញ្ជីជំងឺសរុប</button>
           <button class="btn btn-outline btn-sm kh" id="printFullReportBtn" title="View Report" onclick="printFullReport()">👁️ View</button>
@@ -1837,15 +1836,6 @@
           <button class="btn btn-outline btn-sm kh" onclick="printReportPanel(this)">🖨️ Export PDF</button>
         </div>
         <div class="stats2" id="demoStatsRow" style="margin-bottom:0;"></div>
-      </div>
-
-      <!-- 2. Yesterday Stats (របាយការណ៍ម្សិលមិញ — only the day before today) -->
-      <div class="card-type-stats-panel" style="margin-top: 15px;">
-        <div class="card-type-stats-head">
-          <h4 class="kh">របាយការណ៍ម្សិលមិញ · Yesterday's Report</h4>
-          <button class="btn btn-outline btn-sm kh" onclick="printReportPanel(this)">🖨️ Export PDF</button>
-        </div>
-        <div id="yesterdayStatsRow"></div>
       </div>
 
       <!-- 3. This Month Stats -->
@@ -2655,27 +2645,6 @@
         </div>
       </div>
       <div id="diseaseListTableContainer" style="overflow-x: auto; border: 1px solid var(--border); border-radius: 8px;">
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ☀️ Morning report popup (same form as the monthly Export PDF, for one day) -->
-<div class="overlay hidden" id="morningOverlay" style="z-index:130;">
-  <div class="modal">
-    <div class="modal-head"><h2 class="kh">☀️ របាយការណ៍ពេលព្រឹក · Morning Report</h2><button class="x" id="closeMorning">✕</button></div>
-    <div class="modal-body">
-      <div class="kh" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;">
-        <label class="mono" style="font-size:12px;color:var(--ink-dim);">កាលបរិច្ឆេទ</label>
-        <input type="date" id="morningDate" class="kh" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;">
-        <button type="button" class="btn btn-outline btn-sm kh" data-mday="-1">ម្សិលមិញ</button>
-        <button type="button" class="btn btn-outline btn-sm kh" data-mday="0">ថ្ងៃនេះ</button>
-      </div>
-      <div id="morningArea" style="max-width:794px;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(18,38,63,.12);"></div>
-      <div class="modal-actions">
-        <button class="btn btn-outline kh" id="morningCloseBtn" style="flex:1;justify-content:center;">បិទ Close</button>
-        <button class="btn btn-primary kh" id="morningPdfBtn" style="flex:1;justify-content:center;">📄 Export PDF</button>
-        <button class="btn btn-primary kh" id="morningJpgBtn" style="flex:1;justify-content:center;background-color:#16A34A;border-color:#15803D;">🖼️ Export JPEG</button>
       </div>
     </div>
   </div>
@@ -4127,7 +4096,6 @@ function renderPatientDemographics(){
   
   let tTotalPatients = patients.length;
   let tTotalVisits = allRecords.length;
-  let tCases = allRecords.reduce((n, r) => n + Math.max(1, recordTreatments(r).length), 0);
 
   let tMale = 0, tFemale = 0, tKids = 0, tGirls = 0;
   patients.forEach(p => {
@@ -4152,7 +4120,7 @@ function renderPatientDemographics(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4166,7 +4134,7 @@ function renderThisMonthStats(){
   const now = new Date();
   const currentMonthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
-  let tTotalVisits = 0; let tCases = 0;
+  let tTotalVisits = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4178,7 +4146,7 @@ function renderThisMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === currentMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4210,82 +4178,7 @@ function renderThisMonthStats(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
-  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
-  html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
-  html += `</div>`;
-  
-  if (sortedTreatments.length > 0 || sortedCards.length > 0) {
-      html += `<div style="height: 1px; background: var(--border-soft); margin: 15px 0;"></div>`;
-      html += `<div class="card-type-stats-grid" style="gap:10px;">`;
-      
-      sortedTreatments.forEach(t => {
-          html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
-      });
-
-      if(sortedTreatments.length > 0 && sortedCards.length > 0) {
-          html += `<div style="grid-column: 1 / -1; height: 1px; background: var(--border-soft); margin: 5px 0;"></div>`;
-      }
-
-      sortedCards.forEach(c => {
-          html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
-      });
-      html += `</div>`;
-  }
-  row.innerHTML = html;
-}
-
-function renderYesterdayStats(){
-  const now = new Date();
-  const yDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);   // only the day before today
-
-  let tTotalVisits = 0; let tCases = 0;
-  const tPatientsMap = new Map();
-  const treatCounts = {};
-  const cardCounts = {};
-
-  allRecords.forEach(r => {
-    let dtStr = r.doingDateTime || r.timestamp; 
-    const d = parseAnyDate(dtStr);
-    if (!d) return;
-    if (sameDay(d, yDay)) {
-        tTotalVisits++;
-        tPatientsMap.set(patientKey(r), r);
-        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
-        let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
-        cardCounts[type] = (cardCounts[type] || 0) + 1;
-    }
-  });
-
-  let tMale = 0, tFemale = 0, tKids = 0, tGirls = 0;
-  let tTotalPatients = tPatientsMap.size;
-  Array.from(tPatientsMap.values()).forEach(p => {
-      let sex = String(p.sex || '').toUpperCase();
-      let isFemale = sex === 'F' || sex.includes('ស្រី');
-      if (sex === 'M' || sex.includes('ប្រុស')) tMale++; else tFemale++;
-      let a = parseInt(p.age, 10);
-      if (!isNaN(a) && a <= 15) {
-          tKids++;
-          if(isFemale) tGirls++;
-      }
-  });
-
-  const row = document.getElementById('yesterdayStatsRow');
-  if (!row) return;
-
-  if (tTotalVisits === 0) {
-    row.innerHTML = `<div style="text-align:center;font-size:12px;color:var(--ink-dim);padding:14px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">មិនទាន់មានទិន្នន័យសម្រាប់ម្សិលមិញទេ (No data for yesterday)</div>`;
-    return;
-  }
-
-  const sortedTreatments = Object.keys(treatCounts).sort((a,b) => treatCounts[b] - treatCounts[a]);
-  const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
-
-  let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4324,7 +4217,7 @@ function renderLastMonthStats(){
 
   const lastMonthKey = year + '-' + String(month).padStart(2, '0');
 
-  let tTotalVisits = 0; let tCases = 0;
+  let tTotalVisits = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4336,7 +4229,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4368,7 +4261,7 @@ function renderLastMonthStats(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4610,7 +4503,7 @@ function renderLastMonthStats(){
 
   const lastMonthKey = year + '-' + String(month).padStart(2, '0');
 
-  let tTotalVisits = 0; let tCases = 0;
+  let tTotalVisits = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4622,7 +4515,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4650,7 +4543,7 @@ function renderLastMonthStats(){
   // បង្ហាញ Card ជានិច្ច ទោះបីគ្មានទិន្នន័យក៏ដោយ (លេខ ០)
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4675,6 +4568,66 @@ function renderLastMonthStats(){
       });
       html += `</div>`;
   }
+  row.innerHTML = html;
+}
+
+function renderYesterdayStats(){
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1); // ដកមួយថ្ងៃដើម្បីបានថ្ងៃម្សិលមិញ
+  const yesterdayKey = yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
+
+  const yesterdayRecords = allRecords.filter(r => {
+    let dtStr = r.doingDateTime || r.timestamp; 
+    const d = parseAnyDate(dtStr);
+    if(!d) return false;
+    const dKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return dKey === yesterdayKey;
+  });
+
+  const totalVisits = yesterdayRecords.length;
+  let male = 0, female = 0;
+  const treatCounts = {};
+  const cardCounts = {};
+
+  yesterdayRecords.forEach(r => {
+    let sex = String(r.sex || '').toUpperCase();
+    if (sex === 'M' || sex.includes('ប្រុស')) male++;
+    else female++;
+
+    recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+
+    let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
+    cardCounts[type] = (cardCounts[type] || 0) + 1;
+  });
+
+  const row = document.getElementById('yesterdayStatsRow');
+  if (!row) return;
+
+  if (totalVisits === 0) {
+    row.innerHTML = `<div style="text-align:center;font-size:12px;color:var(--ink-dim);padding:14px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">មិនទាន់មានទិន្នន័យសម្រាប់ម្សិលមិញទេ (No data for yesterday)</div>`;
+    return;
+  }
+
+  const sortedTreatments = Object.keys(treatCounts).sort((a,b) => treatCounts[b] - treatCounts[a]);
+  const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
+
+  let html = `<div class="card-type-stats-grid" style="gap:10px;">`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុប (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${totalVisits}</div></div>`;
+  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
+  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
+  html += `<div style="grid-column: 1 / -1; height: 1px; background: var(--border-soft); margin: 5px 0;"></div>`;
+  
+  sortedTreatments.forEach(t => {
+      html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
+  });
+
+  html += `<div style="grid-column: 1 / -1; height: 1px; background: var(--border-soft); margin: 5px 0;"></div>`;
+
+  sortedCards.forEach(c => {
+      html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
+  });
+
+  html += `</div>`;
   row.innerHTML = html;
 }
 
@@ -6320,7 +6273,7 @@ document.getElementById('patientOverlay').addEventListener('click', (e)=>{ if(e.
 
 document.getElementById('syncBadge').addEventListener('click', () => fetchFromSheet(false));
 
-['printOverlay','settingsOverlay','clinicPinOverlay','listsSettingOverlay','morningOverlay'].forEach(id=>{
+['printOverlay','settingsOverlay','clinicPinOverlay','listsSettingOverlay'].forEach(id=>{
   document.getElementById(id).addEventListener('click', (e)=>{ 
       if(e.target.id===id) {
           document.getElementById(id).classList.add('hidden'); 
@@ -6572,8 +6525,24 @@ function populateDiseaseListYearOptions() {
 
 const KHMER_MONTHS = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
 
-/* the official one-page Khmer ministry-style report sheet — used by the monthly report and the morning report */
-function buildMinistryReportHTML(records, title) {
+function exportMonthlyReportPDF() {
+    const month = document.getElementById('reportFilterMonth').value;
+    const year = document.getElementById('reportFilterYear').value;
+    
+    if (!month || !year) {
+        alert("សូមជ្រើសរើសខែ និងឆ្នាំ មុននឹងទាញយករបាយការណ៍ / Please select month and year.");
+        return;
+    }
+
+    const records = allRecords.filter(r => {
+        let dtStr = r.doingDateTime || r.timestamp; 
+        const d = parseAnyDate(dtStr);
+        if (!d) return false;
+        return (d.getMonth() + 1) === parseInt(month, 10) && d.getFullYear() === parseInt(year, 10);
+    });
+
+    const monthName = KHMER_MONTHS[parseInt(month, 10) - 1];
+    
     const getStats = (recs) => {
         let u15 = 0, o15 = 0, female = 0;
         recs.forEach(r => {
@@ -6721,7 +6690,7 @@ function buildMinistryReportHTML(records, title) {
         <!-- Title -->
         <div style="text-align: center; margin: 6px 0 10px 0;">
             <h3 class="kh" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-                ${title}
+                របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}
             </h3>
         </div>
 
@@ -6819,28 +6788,6 @@ function buildMinistryReportHTML(records, title) {
 
     </div>
     `;
-    return html;
-}
-
-function exportMonthlyReportPDF() {
-    const month = document.getElementById('reportFilterMonth').value;
-    const year = document.getElementById('reportFilterYear').value;
-    
-    if (!month || !year) {
-        alert("សូមជ្រើសរើសខែ និងឆ្នាំ មុននឹងទាញយករបាយការណ៍ / Please select month and year.");
-        return;
-    }
-
-    const records = allRecords.filter(r => {
-        let dtStr = r.doingDateTime || r.timestamp; 
-        const d = parseAnyDate(dtStr);
-        if (!d) return false;
-        return (d.getMonth() + 1) === parseInt(month, 10) && d.getFullYear() === parseInt(year, 10);
-    });
-
-    const monthName = KHMER_MONTHS[parseInt(month, 10) - 1];
-    
-    const html = buildMinistryReportHTML(records, `របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}`);
 
     setPrintMode('portrait');
     document.getElementById('printOverlayTitle').textContent = `របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}`;
@@ -6848,73 +6795,6 @@ function exportMonthlyReportPDF() {
     document.getElementById('exportAllExcelBtn').classList.add('hidden');
     document.getElementById('allListFilterBar').classList.add('hidden'); document.getElementById('printOverlay').classList.remove('hidden');
 }
-
-/* ===== ☀️ Morning report — the monthly report form, for one day (default: yesterday) ===== */
-function morningYmd(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-function morningSelectedDate(){
-  const v = document.getElementById('morningDate').value;
-  if(!v) return null;
-  const [y, m, d] = v.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-function renderMorningReport(){
-  const day = morningSelectedDate(); if(!day) return;
-  const recs = allRecords.filter(r => cleanStr(r.name) && recordVisitedWhere(r, x => sameDay(x, day)));
-  const title = `របាយការណ៍ពេលព្រឹក ថ្ងៃទី ${day.getDate()} ខែ ${KHMER_MONTHS[day.getMonth()]} ឆ្នាំ ${day.getFullYear()}`;
-  document.getElementById('morningArea').innerHTML = buildMinistryReportHTML(recs, title);
-}
-function openMorningReport(){
-  const inp = document.getElementById('morningDate');
-  if(!inp.value){ const y = new Date(); y.setDate(y.getDate() - 1); inp.value = morningYmd(y); }
-  renderMorningReport();
-  document.getElementById('morningOverlay').classList.remove('hidden');
-}
-function exportMorningPdf(){
-  runIsolatedPrint(cloneForPrint(document.getElementById('morningArea')), 'portrait');
-}
-function morningLoadScript(src){
-  return new Promise((resolve, reject) => {
-    const el = document.createElement('script');
-    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Cannot load image library'));
-    document.head.appendChild(el);
-  });
-}
-async function exportMorningJpeg(){
-  const btn = document.getElementById('morningJpgBtn');
-  const label = btn.textContent;
-  btn.disabled = true; btn.textContent = '⏳ ...';
-  try{
-    if(!window.html2canvas) await morningLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
-    const area = document.getElementById('morningArea');
-    const sheet = area.querySelector('.print-sheet') || area;
-    const canvas = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
-    if(!blob) throw new Error('JPEG failed');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'morning-report_' + document.getElementById('morningDate').value + '.jpg';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  }catch(e){
-    alert('Export JPEG មិនបាន: ' + (e && e.message ? e.message : e));
-  }finally{
-    btn.disabled = false; btn.textContent = label;
-  }
-}
-(function initMorningReport(){
-  const close = () => document.getElementById('morningOverlay').classList.add('hidden');
-  document.getElementById('closeMorning').addEventListener('click', close);
-  document.getElementById('morningCloseBtn').addEventListener('click', close);
-  document.getElementById('morningDate').addEventListener('change', renderMorningReport);
-  document.querySelectorAll('#morningOverlay [data-mday]').forEach(b => b.addEventListener('click', () => {
-    const d = new Date(); d.setDate(d.getDate() + parseInt(b.dataset.mday, 10));
-    document.getElementById('morningDate').value = morningYmd(d);
-    renderMorningReport();
-  }));
-  document.getElementById('morningPdfBtn').addEventListener('click', exportMorningPdf);
-  document.getElementById('morningJpgBtn').addEventListener('click', exportMorningJpeg);
-})();
 
 function populateReportYearOptions() {
     const yearSel = document.getElementById('reportFilterYear');
@@ -6938,7 +6818,6 @@ function applyReportFilter() {
     const filteredPanel = document.getElementById('filteredStatsPanel');
     const demoPanel = document.getElementById('demoStatsRow').closest('.card-type-stats-panel');
     const thisMonthPanel = document.getElementById('thisMonthStatsRow').closest('.card-type-stats-panel');
-    const yesterdayPanel = document.getElementById('yesterdayStatsRow').closest('.card-type-stats-panel');
     const lastMonthPanel = document.getElementById('lastMonthStatsRow').closest('.card-type-stats-panel');
     
     if (month || year) {
@@ -6956,12 +6835,10 @@ function applyReportFilter() {
         
         demoPanel.style.display = 'none';
         thisMonthPanel.style.display = 'none';
-        yesterdayPanel.style.display = 'none';
         lastMonthPanel.style.display = 'none';
         filteredPanel.style.display = 'block';
         
         const totalVisits = filtered.length;
-        let tCases = 0;
         let male = 0, female = 0, kids = 0, girls = 0;
         const treatCounts = {};
         const cardCounts = {};
@@ -6969,7 +6846,7 @@ function applyReportFilter() {
 
         filtered.forEach(r => {
           tPatientsMap.set(patientKey(r), r);
-          tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+          recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
 
           let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
           cardCounts[type] = (cardCounts[type] || 0) + 1;
@@ -6999,7 +6876,7 @@ function applyReportFilter() {
 
         let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
         html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${totalVisits}</div></div>`;
         html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
         html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
         html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${kids}</div></div>`;
@@ -7028,7 +6905,6 @@ function applyReportFilter() {
     } else {
         demoPanel.style.display = 'block';
         thisMonthPanel.style.display = 'block';
-        yesterdayPanel.style.display = 'block';
         lastMonthPanel.style.display = 'block';
         filteredPanel.style.display = 'none';
     }
