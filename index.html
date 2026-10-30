@@ -1682,7 +1682,7 @@
             <button type="button" class="btn btn-primary btn-sm kh" id="dashNewRecord">＋ កត់ត្រាថ្មី · New record</button>
             <button type="button" class="btn btn-outline btn-sm kh" data-goto="appointments">🗓️ ការណាត់ជួប</button>
             <button type="button" class="btn btn-outline btn-sm kh" data-goto="patients">👥 អ្នកជំងឺ</button>
-            <button type="button" class="btn btn-outline btn-sm kh" data-goto="report">📊 របាយការណ៍</button>
+            <button type="button" class="btn btn-outline btn-sm kh" id="dashMorningBtn" onclick="openMorningReport()">☀️ រាយការណ៍ពេលព្រឹក</button>
           </div>
         </div>
 
@@ -2657,9 +2657,13 @@
     <div class="modal-head"><h2 class="kh">☀️ របាយការណ៍ពេលព្រឹក · Morning Report</h2><button class="x" id="closeMorning">✕</button></div>
     <div class="modal-body">
       <div class="kh" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;">
-        <label class="mono" style="font-size:12px;color:var(--ink-dim);">កាលបរិច្ឆេទរបាយការណ៍</label>
+        <label class="mono" style="font-size:12px;color:var(--ink-dim);">កាលបរិច្ឆេទទិន្នន័យ</label>
         <input type="date" id="morningDate" class="kh" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;">
-        <button type="button" class="btn btn-outline btn-sm kh" id="morningTodayBtn">ថ្ងៃនេះ</button>
+        <button type="button" class="btn btn-outline btn-sm kh" id="morningYesterdayBtn">ម្សិលមិញ</button>
+      </div>
+      <div class="kh" style="margin-bottom:12px;">
+        <label class="mono" style="font-size:12px;color:var(--ink-dim);display:block;margin-bottom:4px;">៥. Case Report — សរសេរករណីសំខាន់ (ទុកទទេ = គ្មានករណីសំខាន់ ដែលត្រូវលើកយកមកសរសេរ)</label>
+        <textarea id="morningCaseText" class="kh" rows="3" placeholder="សរសេរករណីសំខាន់នៅទីនេះ..." style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;resize:vertical;"></textarea>
       </div>
       <div id="morningArea" style="max-width:794px;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(18,38,63,.12);"></div>
       <div class="inv-status kh" id="morningStatus" style="min-height:18px;margin:10px 0 0;text-align:center;"></div>
@@ -2689,10 +2693,12 @@
         <button type="button" class="btn btn-primary btn-sm kh" id="allListApply">🔍 ត្រង</button>
       </div>
       <div id="printArea"></div>
+      <div class="inv-status kh" id="printTgStatus" style="min-height:18px;margin:10px 0 0;text-align:center;"></div>
       <div class="modal-actions">
         <button class="btn btn-primary hidden kh" id="exportAllExcelBtn" style="flex:1;justify-content:center;background-color:#1769C9;border-color:#1769C9;">📊 Data Excel</button>
         <button class="btn btn-outline" id="closePrintBtn" style="flex:1;justify-content:center;">បិទ Close</button>
         <button class="btn btn-primary" id="printBtn" style="flex:1;justify-content:center;">🖨 Print / Save PDF</button>
+        <button class="btn btn-primary kh" id="printTgBtn" style="flex:1;justify-content:center;background-color:#229ED9;border-color:#1B8CC2;">✈️ ផ្ញើ Telegram</button>
       </div>
     </div>
   </div>
@@ -4075,7 +4081,6 @@ function renderProcRow(item){
       </div>
       <div class="appt-main">
         <div class="appt-name kh">${r.name}</div>
-        <div class="appt-meta">${formatPhoneDisplay(r.phone)||'គ្មានលេខ'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>
       </div>
       <div class="appt-plan-badge kh" style="${scheduleBadgeStyle(item, 'background:var(--primary-soft);color:var(--primary-dark);border-color:rgba(23,105,201,0.4);')}" title="Status: ${item.status ? esc(item.status.label) : ''} · Procedure: ${esc(planText)}">
         ${scheduleBadgeHTML(item, cleanStr(item.stepNote), r.treatment)}
@@ -6769,16 +6774,54 @@ function exportMonthlyReportPDF() {
    One click opens the report (data of the day before today) with 4 sections:
    1 patients · 2 cases · 3 payment types · 4 appointments of the day before today (name + treatment)
    ===================================================================================== */
+/* Case Report notes — one per data date, kept on this device AND in the Google Sheet (OrgChart tab, rows "case:YYYY-MM-DD") */
+const CASE_NOTES_KEY = 'kep_dental_case_notes';
+let caseNotePushTimer = null;
+function caseNotesAll(){ try{ const o = JSON.parse(localStorage.getItem(CASE_NOTES_KEY)); return o && typeof o === 'object' ? o : {}; }catch(e){ return {}; } }
+function caseNotesStore(o){ try{ localStorage.setItem(CASE_NOTES_KEY, JSON.stringify(o)); }catch(e){} }
+function caseNoteFor(ymd){ const n = caseNotesAll()[ymd]; return n ? String(n.text || '') : ''; }
+function pushCaseNote(ymd){
+  const n = caseNotesAll()[ymd]; if(!n) return;
+  pushToSheet('collectionUpsert', { sheet: 'OrgChart', id: 'case:' + ymd, role: 'case', name: '', photo: '',
+    description: String(n.text || ''), updated: new Date(n.ts || Date.now()).toISOString() });
+}
+function saveCaseNote(ymd, text){
+  const o = caseNotesAll();
+  o[ymd] = { text, ts: Date.now() };
+  caseNotesStore(o);
+  clearTimeout(caseNotePushTimer);
+  caseNotePushTimer = setTimeout(() => pushCaseNote(ymd), 900);
+}
+/* called from fetchOrgChart with the OrgChart rows */
+function caseNotesMergeFromSheet(rows){
+  const o = caseNotesAll();
+  const pending = getPendingQueue();
+  let changed = false;
+  rows.forEach(r => {
+    const id = String(r.id || '');
+    if(id.indexOf('case:') !== 0) return;
+    const ymd = id.slice(5);
+    if(pending.some(q => q && q.data && q.data.sheet === 'OrgChart' && q.data.id === id)) return;
+    const lts = (o[ymd] && o[ymd].ts) || 0, rts = Date.parse(r.updated) || 0;
+    if(rts > lts + 5000){ o[ymd] = { text: String(r.description || ''), ts: rts }; changed = true; }
+    else if(lts > rts + 1000){ setTimeout(() => pushCaseNote(ymd), 0); }
+  });
+  if(changed){
+    caseNotesStore(o);
+    try{ if(!document.getElementById('morningOverlay').classList.contains('hidden')) renderMorningReport(); }catch(e){}
+  }
+}
 function morningYmd(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-/* the report of a morning: its date (default today) → patients / cases / payments of the day BEFORE it,
-   and the appointments OF that date */
-function morningReportDate(){
+/* the picker holds the DATA date (default: yesterday). The report of that morning is made on the next day, so
+   section 4 (appointments) shows the appointments of the day after the data date — today, by default. */
+function morningYesterday(){ const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1); }
+function morningDataDay(){
   const v = (document.getElementById('morningDate') || {}).value;
   if(v){ const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); }
-  const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return morningYesterday();
 }
-function morningDataDay(){ const r = morningReportDate(); return new Date(r.getFullYear(), r.getMonth(), r.getDate() - 1); }
-function morningFileStem(){ return 'dental-service-report_' + morningYmd(morningReportDate()); }
+function morningReportDate(){ const x = morningDataDay(); return new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1); }
+function morningFileStem(){ return 'dental-service-report_' + morningYmd(morningDataDay()); }
 function morningTime(d){ const h = d.getHours(), m = d.getMinutes(); if(!h && !m) return ''; return `${String(h % 12 || 12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`; }
 
 /* everything the report shows, computed once (used by the picture and by the Telegram text) */
@@ -6821,7 +6864,8 @@ function morningReportData(){
     else if(prev && !prev.treatment && cleanStr(r.treatment)) prev.treatment = cleanStr(r.treatment);
   });
   const appts = Array.from(apptMap.values()).sort((a, b) => a.d - b.d);
-  return { day, apptDay, patients: pts.size, male, female, kids, girls, cases, tx, cards, appts };
+  const caseNote = caseNoteFor(morningYmd(day)).trim();
+  return { day, apptDay, caseNote, patients: pts.size, male, female, kids, girls, cases, tx, cards, appts };
 }
 function morningDayLabel(day){ return `ថ្ងៃទី ${day.getDate()} ខែ ${KHMER_MONTHS[day.getMonth()]} ឆ្នាំ ${day.getFullYear()}`; }
 
@@ -6859,11 +6903,11 @@ function buildMorningCardsHTML(){
   )}
 </div>
 
-<div class="mrc-sec"><h3 class="kh">២. ករណី</h3>
+<div class="mrc-sec"><h3 class="kh">២. ប្រភេទករណី</h3>
   ${txKeys.length ? `<div class="card-type-stats-grid" style="gap:10px;">${txKeys.map(t => `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(t)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${D.tx[t]}</div></div>`).join('')}</div>` : ''}
 </div>
 
-<div class="mrc-sec"><h3 class="kh">៣. ការទូទាត់</h3>
+<div class="mrc-sec"><h3 class="kh">៣. ប្រភេទទូទាត់</h3>
   ${cardKeys.length ? `<div class="card-type-stats-grid" style="gap:10px;">${cardKeys.map(c => `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(c)}</span><div class="type-stat-count">${D.cards[c]}</div></div>`).join('')}</div>` : none('គ្មានទិន្នន័យ · No data')}
 </div>
 
@@ -6871,17 +6915,23 @@ function buildMorningCardsHTML(){
   ${grid(card('type-blue', 'ការណាត់ជួប (Appointment)', D.appts.length))}
   ${apptRows ? `<div class="mrc-sep"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;">${apptRows}</div>` : ''}
 </div>
+
+<div class="mrc-sec"><h3 class="kh">៥. Case Report</h3>
+  ${D.caseNote ? `<div class="kh" style="white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.7;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);">${esc(D.caseNote)}</div>` : none('គ្មានករណីសំខាន់ ដែលត្រូវលើកយកមកសរសេរ')}
+</div>
 </div>`;
 }
 function renderMorningReport(){
+  const ta = document.getElementById('morningCaseText');
+  if(ta && document.activeElement !== ta) ta.value = caseNoteFor(morningYmd(morningDataDay()));
   document.getElementById('morningArea').innerHTML = buildMorningCardsHTML();
 }
 function openMorningReport(){
-  const inp = document.getElementById('morningDate');
-  if(!inp.value) inp.value = morningYmd(new Date());
+  document.getElementById('morningDate').value = morningYmd(morningYesterday());   // opens on yesterday's data
   setMorningStatus('');
   renderMorningReport();
   document.getElementById('morningOverlay').classList.remove('hidden');
+  try{ fetchOrgChart(true); }catch(e){}   // pull the latest Case Report notes
 }
 function exportMorningPdf(){
   runIsolatedPrint(cloneForPrint(document.getElementById('morningArea')), 'portrait');
@@ -6934,12 +6984,13 @@ function morningCaption(){
     `ទិន្នន័យ ${morningDayLabel(D.day)}`,
     '',
     `១. អ្នកជំងឺ: ${D.patients} (ស្រី ${D.female} · ប្រុស ${D.male} · ក្មេង ${D.kids})`,
-    `២. ករណី: ${D.cases}`
+    `២. ប្រភេទករណី: ${D.cases}`
   ];
   Object.keys(D.tx).sort((a, b) => D.tx[b] - D.tx[a]).slice(0, 8).forEach(n => L.push(`   • ${n}: ${D.tx[n]}`));
-  L.push(`៣. ការទូទាត់: ${Object.keys(D.cards).sort((a, b) => D.cards[b] - D.cards[a]).map(c => `${c} ${D.cards[c]}`).join(' · ') || '—'}`);
+  L.push(`៣. ប្រភេទទូទាត់: ${Object.keys(D.cards).sort((a, b) => D.cards[b] - D.cards[a]).map(c => `${c} ${D.cards[c]}`).join(' · ') || '—'}`);
   L.push(`៤. ការណាត់ជួប: ${D.appts.length}`);
   D.appts.slice(0, 8).forEach(a => L.push(`   • ${cleanStr(a.r.name)} — ${a.treatment || '—'}`));
+  L.push(`៥. Case Report: ${D.caseNote || 'គ្មានករណីសំខាន់'}`);
   return L.join('\n').slice(0, 1000);
 }
 function morningBlobToBase64(blob){
@@ -6980,12 +7031,71 @@ async function sendMorningToTelegram(){
     btn.disabled = false; btn.textContent = label;
   }
 }
+/* ===== ✈️ send what the print preview shows (e.g. the monthly report) to Telegram — picture, or a file when it is long ===== */
+function printTgStatus(text, tone){
+  const el = document.getElementById('printTgStatus'); if(!el) return;
+  el.textContent = text || '';
+  el.className = 'inv-status kh' + (tone ? ' ' + tone : '');
+}
+function printTgTitle(){
+  const area = document.getElementById('printArea');
+  const m = (area.textContent || '').replace(/\s+/g, ' ').match(/របាយការណ៍ប្រចាំខែ\s*\S+\s*ឆ្នាំ\s*\d{4}/);
+  return m ? m[0] : ((document.getElementById('printOverlayTitle') || {}).textContent || 'Report').trim();
+}
+async function sendPrintAreaToTelegram(){
+  if(!navigator.onLine || !webAppUrl){ printTgStatus('⚠️ ត្រូវការអ៊ីនធឺណិត និង Web App URL', 'warn'); return; }
+  const btn = document.getElementById('printTgBtn');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ ...';
+  try{
+    printTgStatus('⏳ កំពុងបង្កើតរូបភាព...', '');
+    if(!window.html2canvas) await morningLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    const area = document.getElementById('printArea');
+    const target = area.querySelector('.print-sheet') || area;
+    let scale = 2;
+    const w0 = target.scrollWidth || 800, h0 = target.scrollHeight || 1000;
+    if((w0 + h0) * scale > 9500) scale = Math.max(1, 9500 / (w0 + h0));   // Telegram photos: width + height ≤ 10000
+    const canvas = await window.html2canvas(target, { scale, backgroundColor: '#ffffff', useCORS: true, logging: false });
+    const asDocument = (canvas.width + canvas.height) > 9500 || canvas.height / canvas.width > 6;   // too long for a photo → send as a file
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+    if(!blob) throw new Error('JPEG failed');
+    const base64 = await morningBlobToBase64(blob);
+    const title = printTgTitle();
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const caption = `📄 ${title}\n${(clinicInfo && clinicInfo.name) || 'Dental Service'}`;
+    printTgStatus('⏳ កំពុងផ្ញើទៅ Telegram...', '');
+    let result = null;
+    try{
+      const res = await fetch(webAppUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'sendTelegram', data: { caption, filename: 'report_' + stamp + '.jpg', mimeType: 'image/jpeg', base64, asDocument }, timestamp: Date.now() })
+      });
+      result = await res.json();
+    }catch(e){ result = null; }   // request sent; only the reply could not be read
+    if(result && result.status === 'success') printTgStatus('✓ បានផ្ញើទៅ Telegram' + (asDocument ? ' (ជាឯកសារ ព្រោះវែង)' : ''), 'ok');
+    else if(result && result.status === 'error') printTgStatus('⚠️ Telegram: ' + String(result.message || '').slice(0, 120), 'warn');
+    else printTgStatus('⚠️ បានបញ្ជូនសំណើ តែមិនអាចបញ្ជាក់លទ្ធផលបាន — សូមពិនិត្យ Telegram', 'warn');
+  }catch(e){
+    printTgStatus('⚠️ ផ្ញើមិនបាន: ' + (e && e.message ? e.message : e), 'warn');
+  }finally{
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+document.getElementById('printTgBtn').addEventListener('click', sendPrintAreaToTelegram);
+['closePrint', 'closePrintBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => printTgStatus('')));
+
 (function initMorningReport(){
   const close = () => document.getElementById('morningOverlay').classList.add('hidden');
   document.getElementById('closeMorning').addEventListener('click', close);
   document.getElementById('morningCloseBtn').addEventListener('click', close);
   document.getElementById('morningDate').addEventListener('change', () => { setMorningStatus(''); renderMorningReport(); });
-  document.getElementById('morningTodayBtn').addEventListener('click', () => { document.getElementById('morningDate').value = morningYmd(new Date()); setMorningStatus(''); renderMorningReport(); });
+  document.getElementById('morningYesterdayBtn').addEventListener('click', () => { document.getElementById('morningDate').value = morningYmd(morningYesterday()); setMorningStatus(''); renderMorningReport(); });
+  document.getElementById('morningCaseText').addEventListener('input', e => {
+    saveCaseNote(morningYmd(morningDataDay()), e.target.value);
+    renderMorningReport();
+  });
   document.getElementById('morningPdfBtn').addEventListener('click', exportMorningPdf);
   document.getElementById('morningJpgBtn').addEventListener('click', exportMorningJpeg);
   document.getElementById('morningTgBtn').addEventListener('click', sendMorningToTelegram);
@@ -9795,6 +9905,7 @@ async function fetchOrgChart(silent){
     });
     certMergeFromSheet(json.data);
     listsMergeFromSheet(json.data);
+    caseNotesMergeFromSheet(json.data);
     orgFetchedAt = Date.now();
     orgSave(); renderOrgChart();
     orgSetStatus('✓ Sync ជោគជ័យ', 'ok', true);
