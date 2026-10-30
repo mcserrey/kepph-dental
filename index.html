@@ -1815,6 +1815,7 @@
           <button class="btn btn-primary btn-sm kh" onclick="exportMonthlyReportPDF()" style="background-color: #16A34A; border-color: #15803D;">📄 Report</button>
         </div>
         <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm kh" onclick="openMorningReport()" style="background-color: #0E7490; border-color: #0E7490;">☀️ រាយការណ៍ពេលព្រឹក</button>
           <button class="btn btn-primary btn-sm kh" onclick="openDiseaseListModal()" style="background-color: var(--amber-dark); border-color: var(--amber-dark);">📋 បញ្ជីជំងឺ (DHIS2)</button>
           <button class="btn btn-primary btn-sm kh" onclick="exportAllToPdf()" style="background-color: var(--coral); border-color: var(--coral);">📄 បញ្ជីជំងឺសរុប</button>
           <button class="btn btn-outline btn-sm kh" id="printFullReportBtn" title="View Report" onclick="printFullReport()">👁️ View</button>
@@ -2650,6 +2651,28 @@
   </div>
 </div>
 
+<!-- ☀️ Morning report popup — opens straight onto the report (yesterday's data) -->
+<div class="overlay hidden" id="morningOverlay" style="z-index:130;">
+  <div class="modal">
+    <div class="modal-head"><h2 class="kh">☀️ របាយការណ៍ពេលព្រឹក · Morning Report</h2><button class="x" id="closeMorning">✕</button></div>
+    <div class="modal-body">
+      <div class="kh" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;">
+        <label class="mono" style="font-size:12px;color:var(--ink-dim);">កាលបរិច្ឆេទរបាយការណ៍</label>
+        <input type="date" id="morningDate" class="kh" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;">
+        <button type="button" class="btn btn-outline btn-sm kh" id="morningTodayBtn">ថ្ងៃនេះ</button>
+      </div>
+      <div id="morningArea" style="max-width:794px;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(18,38,63,.12);"></div>
+      <div class="inv-status kh" id="morningStatus" style="min-height:18px;margin:10px 0 0;text-align:center;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline kh" id="morningCloseBtn" style="flex:1;justify-content:center;">បិទ Close</button>
+        <button class="btn btn-primary kh" id="morningPdfBtn" style="flex:1;justify-content:center;">📄 Export PDF</button>
+        <button class="btn btn-primary kh" id="morningJpgBtn" style="flex:1;justify-content:center;background-color:#16A34A;border-color:#15803D;">🖼️ Export JPEG</button>
+        <button class="btn btn-primary kh" id="morningTgBtn" style="flex:1;justify-content:center;background-color:#229ED9;border-color:#1B8CC2;">✈️ ផ្ញើទៅ Telegram</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="printOverlay">
   <div class="modal">
     <div class="modal-head"><h2 class="kh" id="printOverlayTitle">កំណត់ត្រា · Print Record</h2><button class="x" id="closePrint">✕</button></div>
@@ -3287,7 +3310,6 @@ function renderDashHero(){
 function renderAll(){ 
   renderPatientDemographics(); 
   renderTodayYesterdayStats(); renderTrend14();
-  renderYesterdayStats();
   renderThisMonthStats();
   renderLastMonthStats();
   renderCardTypeStats(); 
@@ -4096,6 +4118,7 @@ function renderPatientDemographics(){
   
   let tTotalPatients = patients.length;
   let tTotalVisits = allRecords.length;
+  let tCases = allRecords.reduce((n, r) => n + Math.max(1, recordTreatments(r).length), 0);
 
   let tMale = 0, tFemale = 0, tKids = 0, tGirls = 0;
   patients.forEach(p => {
@@ -4120,7 +4143,7 @@ function renderPatientDemographics(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4134,7 +4157,7 @@ function renderThisMonthStats(){
   const now = new Date();
   const currentMonthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
-  let tTotalVisits = 0;
+  let tTotalVisits = 0; let tCases = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4146,7 +4169,7 @@ function renderThisMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === currentMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4178,7 +4201,7 @@ function renderThisMonthStats(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4217,7 +4240,7 @@ function renderLastMonthStats(){
 
   const lastMonthKey = year + '-' + String(month).padStart(2, '0');
 
-  let tTotalVisits = 0;
+  let tTotalVisits = 0; let tCases = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4229,7 +4252,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4261,7 +4284,7 @@ function renderLastMonthStats(){
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4503,7 +4526,7 @@ function renderLastMonthStats(){
 
   const lastMonthKey = year + '-' + String(month).padStart(2, '0');
 
-  let tTotalVisits = 0;
+  let tTotalVisits = 0; let tCases = 0;
   const tPatientsMap = new Map();
   const treatCounts = {};
   const cardCounts = {};
@@ -4515,7 +4538,7 @@ function renderLastMonthStats(){
     if ((d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === lastMonthKey) {
         tTotalVisits++;
         tPatientsMap.set(patientKey(r), r);
-        recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+        tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
         let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
         cardCounts[type] = (cardCounts[type] || 0) + 1;
     }
@@ -4543,7 +4566,7 @@ function renderLastMonthStats(){
   // បង្ហាញ Card ជានិច្ច ទោះបីគ្មានទិន្នន័យក៏ដោយ (លេខ ០)
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
   html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalVisits}</div></div>`;
+  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
   html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
   html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
   html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
@@ -4568,66 +4591,6 @@ function renderLastMonthStats(){
       });
       html += `</div>`;
   }
-  row.innerHTML = html;
-}
-
-function renderYesterdayStats(){
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1); // ដកមួយថ្ងៃដើម្បីបានថ្ងៃម្សិលមិញ
-  const yesterdayKey = yesterday.getFullYear() + '-' + String(yesterday.getMonth() + 1).padStart(2, '0') + '-' + String(yesterday.getDate()).padStart(2, '0');
-
-  const yesterdayRecords = allRecords.filter(r => {
-    let dtStr = r.doingDateTime || r.timestamp; 
-    const d = parseAnyDate(dtStr);
-    if(!d) return false;
-    const dKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    return dKey === yesterdayKey;
-  });
-
-  const totalVisits = yesterdayRecords.length;
-  let male = 0, female = 0;
-  const treatCounts = {};
-  const cardCounts = {};
-
-  yesterdayRecords.forEach(r => {
-    let sex = String(r.sex || '').toUpperCase();
-    if (sex === 'M' || sex.includes('ប្រុស')) male++;
-    else female++;
-
-    recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
-
-    let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
-    cardCounts[type] = (cardCounts[type] || 0) + 1;
-  });
-
-  const row = document.getElementById('yesterdayStatsRow');
-  if (!row) return;
-
-  if (totalVisits === 0) {
-    row.innerHTML = `<div style="text-align:center;font-size:12px;color:var(--ink-dim);padding:14px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">មិនទាន់មានទិន្នន័យសម្រាប់ម្សិលមិញទេ (No data for yesterday)</div>`;
-    return;
-  }
-
-  const sortedTreatments = Object.keys(treatCounts).sort((a,b) => treatCounts[b] - treatCounts[a]);
-  const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
-
-  let html = `<div class="card-type-stats-grid" style="gap:10px;">`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុប (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${totalVisits}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
-  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
-  html += `<div style="grid-column: 1 / -1; height: 1px; background: var(--border-soft); margin: 5px 0;"></div>`;
-  
-  sortedTreatments.forEach(t => {
-      html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
-  });
-
-  html += `<div style="grid-column: 1 / -1; height: 1px; background: var(--border-soft); margin: 5px 0;"></div>`;
-
-  sortedCards.forEach(c => {
-      html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
-  });
-
-  html += `</div>`;
   row.innerHTML = html;
 }
 
@@ -6209,7 +6172,6 @@ function saveSettings(){
 function renderAll(){ 
   renderPatientDemographics(); 
   renderTodayYesterdayStats(); renderTrend14();
-  renderYesterdayStats();
   renderThisMonthStats();
   renderLastMonthStats();
   
@@ -6273,7 +6235,7 @@ document.getElementById('patientOverlay').addEventListener('click', (e)=>{ if(e.
 
 document.getElementById('syncBadge').addEventListener('click', () => fetchFromSheet(false));
 
-['printOverlay','settingsOverlay','clinicPinOverlay','listsSettingOverlay'].forEach(id=>{
+['printOverlay','settingsOverlay','clinicPinOverlay','listsSettingOverlay','morningOverlay'].forEach(id=>{
   document.getElementById(id).addEventListener('click', (e)=>{ 
       if(e.target.id===id) {
           document.getElementById(id).classList.add('hidden'); 
@@ -6525,24 +6487,8 @@ function populateDiseaseListYearOptions() {
 
 const KHMER_MONTHS = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
 
-function exportMonthlyReportPDF() {
-    const month = document.getElementById('reportFilterMonth').value;
-    const year = document.getElementById('reportFilterYear').value;
-    
-    if (!month || !year) {
-        alert("សូមជ្រើសរើសខែ និងឆ្នាំ មុននឹងទាញយករបាយការណ៍ / Please select month and year.");
-        return;
-    }
-
-    const records = allRecords.filter(r => {
-        let dtStr = r.doingDateTime || r.timestamp; 
-        const d = parseAnyDate(dtStr);
-        if (!d) return false;
-        return (d.getMonth() + 1) === parseInt(month, 10) && d.getFullYear() === parseInt(year, 10);
-    });
-
-    const monthName = KHMER_MONTHS[parseInt(month, 10) - 1];
-    
+/* the official one-page Khmer ministry-style report sheet — used by the monthly report and the morning report */
+function buildMinistryReportHTML(records, title) {
     const getStats = (recs) => {
         let u15 = 0, o15 = 0, female = 0;
         recs.forEach(r => {
@@ -6690,7 +6636,7 @@ function exportMonthlyReportPDF() {
         <!-- Title -->
         <div style="text-align: center; margin: 6px 0 10px 0;">
             <h3 class="kh" style="margin: 0; font-size: 15px; font-weight: bold; text-transform: uppercase;">
-                របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}
+                ${title}
             </h3>
         </div>
 
@@ -6788,6 +6734,28 @@ function exportMonthlyReportPDF() {
 
     </div>
     `;
+    return html;
+}
+
+function exportMonthlyReportPDF() {
+    const month = document.getElementById('reportFilterMonth').value;
+    const year = document.getElementById('reportFilterYear').value;
+    
+    if (!month || !year) {
+        alert("សូមជ្រើសរើសខែ និងឆ្នាំ មុននឹងទាញយករបាយការណ៍ / Please select month and year.");
+        return;
+    }
+
+    const records = allRecords.filter(r => {
+        let dtStr = r.doingDateTime || r.timestamp; 
+        const d = parseAnyDate(dtStr);
+        if (!d) return false;
+        return (d.getMonth() + 1) === parseInt(month, 10) && d.getFullYear() === parseInt(year, 10);
+    });
+
+    const monthName = KHMER_MONTHS[parseInt(month, 10) - 1];
+    
+    const html = buildMinistryReportHTML(records, `របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}`);
 
     setPrintMode('portrait');
     document.getElementById('printOverlayTitle').textContent = `របាយការណ៍ប្រចាំខែ ${monthName} ឆ្នាំ ${year}`;
@@ -6795,6 +6763,233 @@ function exportMonthlyReportPDF() {
     document.getElementById('exportAllExcelBtn').classList.add('hidden');
     document.getElementById('allListFilterBar').classList.add('hidden'); document.getElementById('printOverlay').classList.remove('hidden');
 }
+
+/* =====================================================================================
+   ☀️ Morning report — របាយការណ៍ផ្នែកសេវាជំងឺមាត់ធ្មេញ · Report Dental Service
+   One click opens the report (data of the day before today) with 4 sections:
+   1 patients · 2 cases · 3 payment types · 4 appointments of the day before today (name + treatment)
+   ===================================================================================== */
+function morningYmd(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+/* the report of a morning: its date (default today) → patients / cases / payments of the day BEFORE it,
+   and the appointments OF that date */
+function morningReportDate(){
+  const v = (document.getElementById('morningDate') || {}).value;
+  if(v){ const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); }
+  const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+function morningDataDay(){ const r = morningReportDate(); return new Date(r.getFullYear(), r.getMonth(), r.getDate() - 1); }
+function morningFileStem(){ return 'dental-service-report_' + morningYmd(morningReportDate()); }
+function morningTime(d){ const h = d.getHours(), m = d.getMinutes(); if(!h && !m) return ''; return `${String(h % 12 || 12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`; }
+
+/* everything the report shows, computed once (used by the picture and by the Telegram text) */
+function morningReportData(){
+  const day = morningDataDay(), apptDay = morningReportDate();
+  const recs = allRecords.filter(r => cleanStr(r.name) && recordVisitedWhere(r, x => sameDay(x, day)));
+  const pts = new Map(), tx = {}, cards = {};
+  let cases = 0;
+  recs.forEach(r => {
+    pts.set(patientKey(r), r);
+    const list = recordTreatments(r);
+    cases += Math.max(1, list.length);
+    list.forEach(t => { tx[t] = (tx[t] || 0) + 1; });
+    const c = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
+    cards[c] = (cards[c] || 0) + 1;
+  });
+  let male = 0, female = 0, kids = 0, girls = 0;
+  pts.forEach(p => {
+    const sex = String(p.sex || '').toUpperCase();
+    const isMale = sex === 'M' || sex.includes('ប្រុស');
+    if(isMale) male++; else female++;
+    const a = parseInt(p.age, 10);
+    if(!isNaN(a) && a <= 15){ kids++; if(!isMale) girls++; }
+  });
+  /* appointments of the report date (today) — one line per patient: name + treatment */
+  const apptMap = new Map();
+  allRecords.forEach(r => {
+    if(!cleanStr(r.name)) return;
+    const steps = stepsArray(r);
+    let when = null;
+    if(steps.length && steps[steps.length - 1].id !== 'legacy'){
+      steps.forEach(st => { if(stepKind(st.name) === 'appt'){ const d = parseAnyDate(st.datetime); if(d && sameDay(d, apptDay)) when = d; } });
+    }else if(recomputeStatusFromSteps(r) === 'Appt'){
+      const d = parseAnyDate(r.timeLast); if(d && sameDay(d, apptDay)) when = d;
+    }
+    if(!when) return;
+    const k = patientKey(r);
+    const prev = apptMap.get(k);
+    if(!prev || when > prev.d) apptMap.set(k, { r, d: when, treatment: cleanStr(r.treatment) });
+    else if(prev && !prev.treatment && cleanStr(r.treatment)) prev.treatment = cleanStr(r.treatment);
+  });
+  const appts = Array.from(apptMap.values()).sort((a, b) => a.d - b.d);
+  return { day, apptDay, patients: pts.size, male, female, kids, girls, cases, tx, cards, appts };
+}
+function morningDayLabel(day){ return `ថ្ងៃទី ${day.getDate()} ខែ ${KHMER_MONTHS[day.getMonth()]} ឆ្នាំ ${day.getFullYear()}`; }
+
+function buildMorningCardsHTML(){
+  const D = morningReportData();
+  const card = (cls, label, n, extra) => `<div class="type-stat-card ${cls}" ${extra || ''}><span class="type-stat-name kh">${esc(label)}</span><div class="type-stat-count" style="font-size:20px;">${n}</div></div>`;
+  const grid = inner => `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;">${inner}</div>`;
+  const none = t => `<div style="text-align:center;font-size:12px;color:var(--ink-dim);padding:12px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">${t}</div>`;
+  const big = 'style="background:var(--primary-softer);border-color:var(--primary);"';
+  const txKeys = Object.keys(D.tx).sort((a, b) => D.tx[b] - D.tx[a]);
+  const cardKeys = Object.keys(D.cards).sort((a, b) => D.cards[b] - D.cards[a]);
+  const apptRows = D.appts.map(a => `<div class="type-stat-card type-default" style="flex-direction:row;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;text-align:left;"><span class="kh" style="font-weight:700;">${esc(cleanStr(a.r.name))}</span><span class="kh" style="color:var(--primary-dark);font-weight:600;text-align:right;">${esc(a.treatment || '—')}</span></div>`).join('');
+
+  return `<div class="print-sheet mrc" style="padding:16px 18px;background:#fff;">
+<style>
+.mrc .mrc-title{text-align:center;margin:0 0 4px;}
+.mrc .mrc-title h2{margin:0;font-size:20px;color:var(--primary-dark);line-height:1.35;}
+.mrc .mrc-title small{display:block;font-size:12px;color:var(--ink-soft);}
+.mrc .mrc-date{text-align:center;font-size:12.5px;font-weight:700;margin:4px 0 12px;padding-bottom:10px;border-bottom:2px solid var(--primary);}
+.mrc .mrc-sec{margin:0 0 14px;break-inside:avoid;page-break-inside:avoid;}
+.mrc .mrc-sec h3{margin:0 0 8px;padding:5px 12px;background:var(--primary);color:#fff;border-radius:8px;font-size:13.5px;}
+.mrc .mrc-sep{height:1px;background:var(--border-soft);margin:10px 0;}
+</style>
+<div class="mrc-title kh"><h2>របាយការណ៍ផ្នែកសេវាជំងឺមាត់ធ្មេញ</h2><small>${esc((clinicInfo && clinicInfo.name) || 'Kep Hospital-Dental Service')} - Dental Brief Reports</small></div>
+<div class="mrc-date kh">របាយការណ៍ព្រឹក ${esc(morningDayLabel(D.apptDay))} · ទិន្នន័យ ${esc(morningDayLabel(D.day))}</div>
+
+<div class="mrc-sec"><h3 class="kh">១. អ្នកជំងឺ</h3>
+  ${grid(
+    card('', 'សរុប (Total)', D.patients, big) +
+    card('type-red', 'ស្រី (Female)', D.female) +
+    card('type-blue', 'ប្រុស (Male)', D.male) +
+    card('type-yellow', 'ក្មេង (ស្មើឬក្រោម១៥)', D.kids) +
+    card('type-red', 'ក្មេងស្រី', D.girls)
+  )}
+</div>
+
+<div class="mrc-sec"><h3 class="kh">២. ករណី</h3>
+  ${grid(card('', 'សរុប (Case)', D.cases, big))}
+  ${txKeys.length ? `<div class="mrc-sep"></div><div class="card-type-stats-grid" style="gap:10px;">${txKeys.map(t => `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(t)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${D.tx[t]}</div></div>`).join('')}</div>` : ''}
+</div>
+
+<div class="mrc-sec"><h3 class="kh">៣. ការទូទាត់</h3>
+  ${cardKeys.length ? `<div class="card-type-stats-grid" style="gap:10px;">${cardKeys.map(c => `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(c)}</span><div class="type-stat-count">${D.cards[c]}</div></div>`).join('')}</div>` : none('គ្មានទិន្នន័យ · No data')}
+</div>
+
+<div class="mrc-sec"><h3 class="kh">៤. ការណាត់ជួប</h3>
+  ${grid(card('type-blue', 'ការណាត់ជួប (Appointment)', D.appts.length))}
+  ${apptRows ? `<div class="mrc-sep"></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;">${apptRows}</div>` : ''}
+</div>
+</div>`;
+}
+function renderMorningReport(){
+  document.getElementById('morningArea').innerHTML = buildMorningCardsHTML();
+}
+function openMorningReport(){
+  const inp = document.getElementById('morningDate');
+  if(!inp.value) inp.value = morningYmd(new Date());
+  setMorningStatus('');
+  renderMorningReport();
+  document.getElementById('morningOverlay').classList.remove('hidden');
+}
+function exportMorningPdf(){
+  runIsolatedPrint(cloneForPrint(document.getElementById('morningArea')), 'portrait');
+}
+function morningLoadScript(src){
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Cannot load image library'));
+    document.head.appendChild(el);
+  });
+}
+function setMorningStatus(text, tone){
+  const el = document.getElementById('morningStatus'); if(!el) return;
+  el.textContent = text || '';
+  el.className = 'inv-status kh' + (tone ? ' ' + tone : '');
+}
+async function morningJpegBlob(){
+  if(!window.html2canvas) await morningLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  const area = document.getElementById('morningArea');
+  const sheet = area.querySelector('.print-sheet') || area;
+  const canvas = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
+  if(!blob) throw new Error('JPEG failed');
+  return blob;
+}
+async function exportMorningJpeg(){
+  const btn = document.getElementById('morningJpgBtn');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ ...';
+  try{
+    const blob = await morningJpegBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = morningFileStem() + '.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }catch(e){
+    alert('Export JPEG មិនបាន: ' + (e && e.message ? e.message : e));
+  }finally{
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+/* short text sent with the picture */
+function morningCaption(){
+  const D = morningReportData();
+  const L = [
+    `☀️ របាយការណ៍ផ្នែកសេវាជំងឺមាត់ធ្មេញ`,
+    `${morningDayLabel(D.apptDay)} · ${(clinicInfo && clinicInfo.name) || 'Dental Service'}`,
+    `ទិន្នន័យ ${morningDayLabel(D.day)}`,
+    '',
+    `១. អ្នកជំងឺ: ${D.patients} (ស្រី ${D.female} · ប្រុស ${D.male} · ក្មេង ${D.kids})`,
+    `២. ករណី: ${D.cases}`
+  ];
+  Object.keys(D.tx).sort((a, b) => D.tx[b] - D.tx[a]).slice(0, 8).forEach(n => L.push(`   • ${n}: ${D.tx[n]}`));
+  L.push(`៣. ការទូទាត់: ${Object.keys(D.cards).sort((a, b) => D.cards[b] - D.cards[a]).map(c => `${c} ${D.cards[c]}`).join(' · ') || '—'}`);
+  L.push(`៤. ការណាត់ជួប: ${D.appts.length}`);
+  D.appts.slice(0, 8).forEach(a => L.push(`   • ${cleanStr(a.r.name)} — ${a.treatment || '—'}`));
+  return L.join('\n').slice(0, 1000);
+}
+function morningBlobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] || '');
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+/* one click: picture of the report + short summary → Telegram, through the Apps Script (the bot token stays there, never in this page) */
+async function sendMorningToTelegram(){
+  if(!navigator.onLine || !webAppUrl){ setMorningStatus('⚠️ ត្រូវការអ៊ីនធឺណិត និង Web App URL', 'warn'); return; }
+  const btn = document.getElementById('morningTgBtn');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ ...';
+  try{
+    setMorningStatus('⏳ កំពុងបង្កើតរូបភាព...', '');
+    const blob = await morningJpegBlob();
+    const base64 = await morningBlobToBase64(blob);
+    setMorningStatus('⏳ កំពុងផ្ញើទៅ Telegram...', '');
+    let result = null;
+    try{
+      const res = await fetch(webAppUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'sendTelegram', data: {
+          caption: morningCaption(), filename: morningFileStem() + '.jpg',
+          mimeType: 'image/jpeg', base64 }, timestamp: Date.now() })
+      });
+      result = await res.json();
+    }catch(e){ result = null; }   // the request was sent; only the reply could not be read
+    if(result && result.status === 'success') setMorningStatus('✓ បានផ្ញើទៅ Telegram', 'ok');
+    else if(result && result.status === 'error') setMorningStatus('⚠️ Telegram: ' + String(result.message || '').slice(0, 120) + (/Unknown error/i.test(result.message || '') ? ' (សូមដាក់ Telegram.gs ហើយ Deploy Version ថ្មី)' : ''), 'warn');
+    else setMorningStatus('⚠️ បានបញ្ជូនសំណើ តែមិនអាចបញ្ជាក់លទ្ធផលបាន — សូមពិនិត្យ Telegram', 'warn');
+  }catch(e){
+    setMorningStatus('⚠️ ផ្ញើមិនបាន: ' + (e && e.message ? e.message : e), 'warn');
+  }finally{
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+(function initMorningReport(){
+  const close = () => document.getElementById('morningOverlay').classList.add('hidden');
+  document.getElementById('closeMorning').addEventListener('click', close);
+  document.getElementById('morningCloseBtn').addEventListener('click', close);
+  document.getElementById('morningDate').addEventListener('change', () => { setMorningStatus(''); renderMorningReport(); });
+  document.getElementById('morningTodayBtn').addEventListener('click', () => { document.getElementById('morningDate').value = morningYmd(new Date()); setMorningStatus(''); renderMorningReport(); });
+  document.getElementById('morningPdfBtn').addEventListener('click', exportMorningPdf);
+  document.getElementById('morningJpgBtn').addEventListener('click', exportMorningJpeg);
+  document.getElementById('morningTgBtn').addEventListener('click', sendMorningToTelegram);
+})();
 
 function populateReportYearOptions() {
     const yearSel = document.getElementById('reportFilterYear');
@@ -6839,6 +7034,7 @@ function applyReportFilter() {
         filteredPanel.style.display = 'block';
         
         const totalVisits = filtered.length;
+        let tCases = 0;
         let male = 0, female = 0, kids = 0, girls = 0;
         const treatCounts = {};
         const cardCounts = {};
@@ -6846,7 +7042,7 @@ function applyReportFilter() {
 
         filtered.forEach(r => {
           tPatientsMap.set(patientKey(r), r);
-          recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
+          tCases += Math.max(1, recordTreatments(r).length); recordTreatments(r).forEach(treat => { treatCounts[treat] = (treatCounts[treat] || 0) + 1; });
 
           let type = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
           cardCounts[type] = (cardCounts[type] || 0) + 1;
@@ -6876,7 +7072,7 @@ function applyReportFilter() {
 
         let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
         html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${totalVisits}</div></div>`;
+        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
         html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
         html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
         html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${kids}</div></div>`;
