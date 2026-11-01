@@ -7155,9 +7155,24 @@ async function morningJpegBlob(landscape){
       if(host.parentNode) host.parentNode.removeChild(host);
     }
   }else{
-    const area = document.getElementById('morningArea');
-    sheet = area.querySelector('.print-sheet') || area;
-    canvas = await window.html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+    /* DESKTOP-MODE picture — always, on a phone exactly as on a computer. Used by BOTH the 🖼️ JPEG button and ✈️ Telegram.
+       The report is rebuilt in an off-screen box that is 794px wide (A4 portrait, its width on a desktop screen) and drawn as if the
+       window were 1280px wide, so the phone's screen width / mobile-mode never squeezes the layout. */
+    host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;width:794px;background:#fff;pointer-events:none;';
+    host.innerHTML = buildMorningCardsHTML();
+    sheet = host.querySelector('.print-sheet') || host;
+    sheet.style.width = '794px';
+    document.body.appendChild(host);
+    try{
+      canvas = await window.html2canvas(sheet, {
+        scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+        windowWidth: 1280, windowHeight: 900, scrollX: 0, scrollY: 0,
+        onclone: doc => { try{ doc.body.classList.remove('mobile-mode'); }catch(e){} }
+      });
+    }finally{
+      if(host.parentNode) host.parentNode.removeChild(host);
+    }
   }
   const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.95));
   if(!blob) throw new Error('JPEG failed');
@@ -7214,7 +7229,7 @@ async function sendMorningToTelegram(){
   btn.disabled = true; btn.textContent = '⏳ ...';
   try{
     setMorningStatus('⏳ កំពុងបង្កើតរូបភាព...', '');
-    const blob = await morningJpegBlob();   // landscape picture for Telegram
+    const blob = await morningJpegBlob();   // same desktop-mode picture as the 🖼️ JPEG button
     const base64 = await morningBlobToBase64(blob);
     setMorningStatus('⏳ កំពុងផ្ញើទៅ Telegram...', '');
     let result = null;
