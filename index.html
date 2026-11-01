@@ -964,6 +964,17 @@
   .morning-bar{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;margin-right:8px;align-items:center;}
 #morningOverlay .modal-head{flex-wrap:wrap;gap:8px;}
   .morning-bar .btn{padding:5px 11px;font-size:12px;min-height:0;white-space:nowrap;}
+  .csel{position:relative;width:100%;}
+  .csel-native{display:none !important;}
+  .csel-btn{width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--border);color:var(--ink);border-radius:9px;padding:9px 30px 9px 11px;font-size:13.5px;font-family:inherit;cursor:pointer;position:relative;min-height:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .csel-btn::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--ink-dim);}
+  .csel-btn.open,.csel-btn:focus{border-color:var(--primary);outline:none;}
+  .csel-panel{position:fixed;z-index:5000;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(18,38,63,.24);overflow-y:auto;padding:4px;}
+  .csel-group{font-weight:900;font-size:16px;color:#0a3d91;background:#e8f0fc;padding:8px 12px;margin:6px 0 2px;border-radius:7px;line-height:1.5;}
+  .csel-opt{padding:7px 12px 7px 28px;font-size:14px;border-radius:7px;cursor:pointer;color:var(--ink);line-height:1.5;}
+  .csel-opt.top{padding-left:12px;}
+  .csel-opt:hover,.csel-opt.active{background:var(--primary-soft);}
+  .csel-opt.sel{font-weight:700;color:var(--primary-dark);}
   .opt-grip{cursor:grab;color:var(--ink-dim);font-size:15px;letter-spacing:-3px;user-select:none;padding:0 4px;}
   .opt-name{flex:1;font-size:12.5px;font-weight:600;word-break:break-word;}
   .opt-edit{flex:1;padding:4px 8px;border:1.5px solid var(--primary);border-radius:6px;font-size:12.5px;outline:none;}
@@ -2727,6 +2738,14 @@
       <div class="field" style="margin-bottom:10px;"><div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">អាសយដ្ឋាន</div><input type="text" id="s_address"></div>
       <div class="field" style="margin-bottom:16px;"><div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">ទូរស័ព្ទ</div><input type="text" id="s_phone"></div>
       <hr style="border:none;border-top:1px solid var(--border-soft);margin:4px 0 16px;">
+      <div style="margin-bottom:16px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface-2);">
+        <div class="kh" style="font-size:12.5px;font-weight:800;color:var(--primary-dark);margin-bottom:8px;">☀️ ផ្ញើរបាយការណ៍ពេលព្រឹក Auto → Telegram</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <label class="kh" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer;"><input type="checkbox" id="s_autoMorningOn"> បើក</label>
+          <label class="kh" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;">ម៉ោង <input type="time" id="s_autoMorningTime" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;background:var(--surface);color:var(--ink);"></label>
+        </div>
+        <div class="kh" id="s_autoMorningInfo" style="font-size:11.5px;color:var(--ink-dim);margin-top:8px;line-height:1.6;"></div>
+      </div>
       <div class="field" style="margin-bottom:8px;">
         <div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">🔄 Google Sheet Sync URL (Apps Script)</div>
         <input type="text" id="s_webappurl">
@@ -2852,57 +2871,127 @@ const DEFAULT_LISTS = {
 let appCustomLists = JSON.parse(localStorage.getItem('dental_custom_lists_app')) || JSON.parse(JSON.stringify(DEFAULT_LISTS));
 let currentSettingTab = 'treatment';
 
-const LISTS_TS_KEY = 'dental_custom_lists_ts';
-let listsPushTimer = null;
-function saveCustomLists(fromSheetTs) {
+/* ==========================================================
+   Settings → Google Sheet tab "Setting"  (rows: key | value | updated)
+   keys: clinic.name · clinic.address · clinic.phone · list.treatment · list.diagnosis · list.procedure · list.regcard
+   (list values are one item per line; a group heading is a line starting with "## ")
+   ========================================================== */
+const SETTING_SHEET = 'Setting';
+const SETTING_TS_KEY = 'kep_setting_ts_v1';      // {key: ms of the last change known for that key}
+const SETTING_SNAP_KEY = 'kep_setting_snap_v1';  // {key: value last known to be in sync}
+const CLINIC_INFO_KEY = 'kep_dental_clinic_info';
+const DEFAULT_CLINIC = { name: 'Kep Hospital-Dental Service', address: 'Kep, Cambodia', phone: '' };
+let settingsPushTimer = null, settingsFetching = false, settingsFetchedAt = 0;
+const AUTO_MORNING_KEY = 'kep_auto_morning';       // {on, time:'HH:MM', last:'YYYY-MM-DD' = the day it was last sent}
+let autoMorning = Object.assign({ on: false, time: '07:30', last: '' }, stJson(AUTO_MORNING_KEY));
+
+function stJson(k){ try{ const o = JSON.parse(localStorage.getItem(k)); return o && typeof o === 'object' ? o : {}; }catch(e){ return {}; } }
+function stStore(k, o){ try{ localStorage.setItem(k, JSON.stringify(o)); }catch(e){} }
+function settingKeys(){ return ['clinic.name','clinic.address','clinic.phone','auto.morning.on','auto.morning.time','auto.morning.last'].concat(Object.keys(DEFAULT_LISTS).map(k => 'list.' + k)); }
+function settingValue(key){
+  if(key === 'auto.morning.on') return autoMorning.on ? '1' : '0';
+  if(key === 'auto.morning.time') return String(autoMorning.time || '07:30');
+  if(key === 'auto.morning.last') return String(autoMorning.last || '');
+  if(key.startsWith('clinic.')) return String((clinicInfo && clinicInfo[key.slice(7)]) || '');
+  return (appCustomLists[key.slice(5)] || []).join('\n');
+}
+function settingDefault(key){
+  if(key === 'auto.morning.on') return '0';
+  if(key === 'auto.morning.time') return '07:30';
+  if(key === 'auto.morning.last') return '';
+  if(key.startsWith('clinic.')) return String(DEFAULT_CLINIC[key.slice(7)] || '');
+  return (DEFAULT_LISTS[key.slice(5)] || []).join('\n');
+}
+function applySetting(key, value){      // remote → this device (no push back)
+  if(key.startsWith('auto.morning.')){
+    if(key === 'auto.morning.on') autoMorning.on = (value === '1');
+    else if(key === 'auto.morning.time') autoMorning.time = value || '07:30';
+    else autoMorning.last = value;
+    stStore(AUTO_MORNING_KEY, autoMorning);
+  }else if(key.startsWith('clinic.')){
+    clinicInfo = Object.assign({}, clinicInfo, { [key.slice(7)]: value });
+    stStore(CLINIC_INFO_KEY, clinicInfo);
+    try{ renderShellMeta(); }catch(e){}
+  }else{
+    appCustomLists[key.slice(5)] = String(value).split('\n').map(x => x.trim()).filter(Boolean);
+    saveCustomLists(true);
+    try{ renderOptionsList(); }catch(e){}
+  }
+}
+function pushSetting(key, value, ts){
+  try{   // an older, not-yet-sent copy of this key is superseded → drop it so it can never overwrite the newer
+    savePendingQueue(getPendingQueue().filter(x => !(x && x.action === 'settingUpsert' && x.data && x.data.key === key)));
+  }catch(e){}
+  pushToSheet('settingUpsert', { sheet: SETTING_SHEET, key, value, updated: new Date(ts || Date.now()).toISOString() });
+}
+/* a local change: find the keys whose value differs from the last synced value and send them */
+function pushChangedSettings(){
+  settingsPushTimer = null;
+  const ts = stJson(SETTING_TS_KEY), snap = stJson(SETTING_SNAP_KEY), now = Date.now();
+  settingKeys().forEach(k => {
+    const v = settingValue(k);
+    if(snap[k] === v) return;
+    ts[k] = now; snap[k] = v;
+    pushSetting(k, v, now);
+  });
+  stStore(SETTING_TS_KEY, ts); stStore(SETTING_SNAP_KEY, snap);
+}
+function scheduleSettingsPush(){
+  clearTimeout(settingsPushTimer);
+  settingsPushTimer = setTimeout(pushChangedSettings, 250);
+}
+function flushSettingsNow(){        // Done / close / Save / leaving the page → send a waiting change right away
+  if(settingsPushTimer){ clearTimeout(settingsPushTimer); pushChangedSettings(); }
+}
+function flushListsNow(){ flushSettingsNow(); }
+window.addEventListener('pagehide', flushSettingsNow);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden') flushSettingsNow();
+  else if(Date.now() - settingsFetchedAt > 60000) fetchSettings(true);
+});
+function saveCustomLists(fromRemote) {
   try{ localStorage.setItem('dental_custom_lists_app', JSON.stringify(appCustomLists)); }catch(e){}
-  try{ localStorage.setItem(LISTS_TS_KEY, String(fromSheetTs || Date.now())); }catch(e){}
   try{ populateAllSelectDropdowns(); }catch(e){}
   try{ renderCardTypeStats(); }catch(e){}
-  if(!fromSheetTs){            // a local change → keep it in the Google Sheet too, so it survives and reaches every device
-    clearTimeout(listsPushTimer);
-    listsPushTimer = setTimeout(pushCustomLists, 250);
+  if(!fromRemote) scheduleSettingsPush();      // a local change → keep it in the Sheet "Setting" too
+}
+async function fetchSettings(silent){
+  if(!webAppUrl || settingsFetching || !navigator.onLine) return;
+  settingsFetching = true;
+  const badge = document.getElementById('syncBadge');
+  try{
+    await flushPendingQueue();
+    const sep = webAppUrl.includes('?') ? '&' : '?';
+    const res = await fetch(`${webAppUrl}${sep}sheet=${SETTING_SHEET}&_=${Date.now()}`);
+    const json = await res.json();
+    if(!(json && json.status === 'success' && json.sheet === SETTING_SHEET && Array.isArray(json.data))){
+      if(!silent && badge){ badge.textContent = '⚠️ Setting.gs មិនទាន់មាន'; setTimeout(()=>{ badge.textContent = 'Sync'; }, 4000); }
+      return;
+    }
+    const pendingKeys = new Set(getPendingQueue().filter(q => q && q.action === 'settingUpsert' && q.data).map(q => q.data.key));
+    const remote = {}; json.data.forEach(r => { if(r && r.key) remote[String(r.key)] = r; });
+    const ts = stJson(SETTING_TS_KEY), snap = stJson(SETTING_SNAP_KEY);
+    settingKeys().forEach(k => {
+      if(pendingKeys.has(k)) return;
+      const lv = settingValue(k), r = remote[k];
+      if(!r){                                         // the Sheet doesn't know this key yet
+        if(lv !== settingDefault(k)){ const t = ts[k] || Date.now(); ts[k] = t; snap[k] = lv; pushSetting(k, lv, t); }
+        return;
+      }
+      const rv = String(r.value == null ? '' : r.value), rts = Date.parse(r.updated) || 0, lts = ts[k] || 0;
+      if(rv === lv){ snap[k] = lv; if(!lts) ts[k] = rts; return; }
+      if(rts > lts + 5000){ applySetting(k, rv); ts[k] = rts; snap[k] = rv; }
+      else if(lts > rts + 1000){ pushSetting(k, lv, lts); snap[k] = lv; }
+    });
+    stStore(SETTING_TS_KEY, ts); stStore(SETTING_SNAP_KEY, snap);
+    settingsFetchedAt = Date.now();
+  }catch(e){
+  }finally{
+    settingsFetching = false;
   }
 }
-function flushListsNow(){            // push a waiting change right away (Done / close / leaving the page)
-  if(listsPushTimer){ clearTimeout(listsPushTimer); listsPushTimer = null; pushCustomLists(); }
-}
-window.addEventListener('pagehide', flushListsNow);
-document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') flushListsNow(); });
-function pushCustomLists(){
-  listsPushTimer = null;
-  try{   // an older, not-yet-sent copy of the lists is superseded by this one → drop it so it can never overwrite the newer
-    const q = getPendingQueue().filter(x => !(x && x.data && x.data.sheet === 'OrgChart' && x.data.id === 'lists:app'));
-    savePendingQueue(q);
-  }catch(e){}
-  let ts = 0; try{ ts = parseInt(localStorage.getItem(LISTS_TS_KEY) || '0', 10) || 0; }catch(e){}
-  pushToSheet('collectionUpsert', {
-    sheet: 'OrgChart', id: 'lists:app', role: 'lists', name: '', photo: '',
-    description: JSON.stringify(appCustomLists), updated: new Date(ts || Date.now()).toISOString()
-  });
-}
-/* rows from the OrgChart sheet → the Treatment / Diagnosis / Procedure / Card lists (called from fetchOrgChart) */
-function listsMergeFromSheet(rows){
-  const r = rows.find(x => String(x.id || '') === 'lists:app');
-  const pending = getPendingQueue().some(q => q && q.data && q.data.sheet === 'OrgChart' && q.data.id === 'lists:app');
-  if(pending) return;
-  let lts = 0; try{ lts = parseInt(localStorage.getItem(LISTS_TS_KEY) || '0', 10) || 0; }catch(e){}
-  if(!r){
-    if(JSON.stringify(appCustomLists) !== JSON.stringify(DEFAULT_LISTS)){ saveCustomLists(); }   // customised before the sheet knew → upload once
-    return;
-  }
-  let remote = null;
-  try{ remote = JSON.parse(String(r.description || '')); }catch(e){}
-  if(!remote || typeof remote !== 'object') return;
-  const rts = Date.parse(r.updated) || 0;
-  if(rts > lts + 5000){
-    Object.keys(DEFAULT_LISTS).forEach(k => { if(Array.isArray(remote[k])) appCustomLists[k] = remote[k].map(String); });
-    saveCustomLists(rts || 1);
-    try{ renderOptionsList(); }catch(e){}
-  }else if(lts > rts + 1000){
-    pushCustomLists();
-  }
-}
+/* the lists used to live in the OrgChart tab — now they live in "Setting"; kept only so fetchOrgChart can still call it */
+function listsMergeFromSheet(rows){}
 
 /* ---- Group headers (ក្រុម / ប្រភេទ): an item stored as "## name" is a highlighted heading, not a choice ---- */
 const GROUP_PREFIX = '## ';
@@ -3134,6 +3223,7 @@ const PENDING_SYNC_QUEUE_KEY = 'kep_dental_pending_push_queue_v3';
 
 let allRecords = [];
 let clinicInfo = {name:'Kep Hospital-Dental Service', address:'Kep, Cambodia', phone:''};
+try{ const ci = JSON.parse(localStorage.getItem('kep_dental_clinic_info')); if(ci && typeof ci === 'object') clinicInfo = Object.assign(clinicInfo, ci); }catch(e){}
 
 const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyvKjJ2kOEWhcfR6Ppb1s6-hKl2azvFqiyUe6WRhrhGdtziHq6TKHJiDmTX96pi3HPL/exec';
 let webAppUrl = DEFAULT_WEB_APP_URL;
@@ -4099,7 +4189,7 @@ function scheduleBadgeStyle(item, fallback){
   return STATUS_BADGE_STYLES[statusBadgeKey(st.kind, st.d, today0)] + 'max-width:none;white-space:normal;';
 }
 
-function renderApptRow(item){
+function renderApptRow(item, nameOnly){      // nameOnly = dashboard panel: patient name only (no phone / treatment line)
   const {r,d} = item;
   const timeStr = dashTimeStr(d);
   const dayStr = dashDayLabel(d);
@@ -4113,7 +4203,7 @@ function renderApptRow(item){
       </div>
       <div class="appt-main">
         <div class="appt-name kh">${r.name}</div>
-        <div class="appt-meta">${formatPhoneDisplay(r.phone)||'no phone'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>
+        ${nameOnly ? '' : `<div class="appt-meta">${formatPhoneDisplay(r.phone)||'no phone'} · <span class="kh">${r.treatment||r.diagnosis||'—'}</span></div>`}
       </div>
       <div class="appt-plan-badge kh" style="${scheduleBadgeStyle(item, '')}" title="Status: ${item.status ? esc(item.status.label) : ''} · Plan DO: ${esc(planText)}">
         ${scheduleBadgeHTML(item, planText)}
@@ -4152,7 +4242,7 @@ function renderAppointments(){
   const procBody = document.getElementById('procTodayBody');
   
   todayBody.innerHTML = todayList.length
-    ? todayList.map(renderApptRow).join('')
+    ? todayList.map(it => renderApptRow(it, true)).join('')
     : `<div class="empty-state kh" style="padding:20px;font-size:12px;">មិនមានការណាត់ជួបក្នុងចន្លោះ ៣ ថ្ងៃនេះទេ<br><span style="opacity:.7">No appointments (yesterday - tomorrow)</span></div>`;
     
   procBody.innerHTML = todayProcList.length
@@ -6217,11 +6307,18 @@ function openSettings(){
   document.getElementById('s_address').value = clinicInfo.address;
   document.getElementById('s_phone').value = clinicInfo.phone;
   document.getElementById('s_webappurl').value = webAppUrl;
+  autoMorningFillUi();
   document.getElementById('settingsOverlay').classList.remove('hidden');
+  try{ fetchSettings(true); }catch(e){}
 }
 
 function saveSettings(){
   clinicInfo = { name: document.getElementById('s_clinicName').value.trim() || 'Kep Hospital-Dental Service', address: document.getElementById('s_address').value.trim(), phone: document.getElementById('s_phone').value.trim() };
+  stStore(CLINIC_INFO_KEY, clinicInfo);
+  { const on = !!document.getElementById('s_autoMorningOn').checked, tm = document.getElementById('s_autoMorningTime').value || '07:30';
+    if(on !== autoMorning.on || tm !== autoMorning.time) autoMorning.last = '';     // changed on purpose → may send again today
+    autoMorning.on = on; autoMorning.time = tm; stStore(AUTO_MORNING_KEY, autoMorning); }
+  scheduleSettingsPush(); flushSettingsNow();
   webAppUrl = document.getElementById('s_webappurl').value.trim();
   localStorage.setItem('kep_dental_webapp_url', webAppUrl);
   document.getElementById('settingsOverlay').classList.add('hidden');
@@ -6292,7 +6389,7 @@ document.getElementById('toothHistoryModalOverlay').addEventListener('click', (e
 document.getElementById('formOverlay').addEventListener('click', (e)=>{ if(e.target.id==='formOverlay') closeFormModal(); });
 document.getElementById('patientOverlay').addEventListener('click', (e)=>{ if(e.target.id==='patientOverlay') closePatientModal(); });
 
-document.getElementById('syncBadge').addEventListener('click', () => fetchFromSheet(false));
+document.getElementById('syncBadge').addEventListener('click', () => { fetchFromSheet(false); fetchSettings(false); });
 
 ['printOverlay','settingsOverlay','clinicPinOverlay','listsSettingOverlay','morningOverlay'].forEach(id=>{
   document.getElementById(id).addEventListener('click', (e)=>{ 
@@ -7207,6 +7304,80 @@ document.getElementById('printTgBtn').addEventListener('click', sendPrintAreaToT
   document.getElementById('morningJpgBtn').addEventListener('click', exportMorningJpeg);
   document.getElementById('morningTgBtn').addEventListener('click', sendMorningToTelegram);
 })();
+
+/* ===== 🤖 Auto-send of the Morning Report (no one clicks) =====
+   Opened as  KDS.html?autosend=morning  by the scheduled runner (auto-send.mjs / GitHub Actions).
+   It loads the data, builds the SAME picture (morningJpegBlob) and the SAME text (morningCaption) and sends them
+   through the SAME function as the ✈️ Telegram button — so the automatic message is identical to the manual one. */
+window.__autoSend = { done: false };
+/* load the data and send the report exactly like the ✈️ Telegram button (same picture, same text) */
+async function morningAutoCore(){
+  await fetchFromSheet(true);                                     // patient records
+  if(!allRecords.length) return { ok: false, text: 'មិនអាចទាញទិន្នន័យពី Sheet (allRecords ទទេ)' };
+  try{ await fetchOrgChart(true); }catch(e){}                     // Case Report note of the day
+  document.getElementById('morningDate').value = morningYmd(morningYesterday());
+  renderMorningReport();
+  await sendMorningToTelegram();
+  const el = document.getElementById('morningStatus');
+  const text = el ? el.textContent : '';
+  return { ok: (!!el && !/warn/.test(el.className)) || /បានបញ្ជូនសំណើ/.test(text), text };
+}
+async function autoSendMorning(){        // headless runner (auto-send.mjs)
+  const out = { done: false, ok: false, text: '' };
+  window.__autoSend = out;
+  try{
+    try{ sessionStorage.setItem('dental_app_unlocked', 'true'); appLockOverlay.classList.add('hidden'); document.body.classList.remove('lock-preview'); }catch(e){}
+    if(!webAppUrl) throw new Error('គ្មាន Web App URL');
+    try{ await fetchSettings(true); }catch(e){}                   // clinic name etc. (Sheet tab "Setting")
+    const r = await morningAutoCore();
+    out.ok = r.ok; out.text = r.text;
+  }catch(e){
+    out.text = 'ERROR: ' + (e && e.message ? e.message : e);
+  }
+  out.done = true;
+}
+/* ----- the time set in Settings: while the app is open, send once a day at that time ----- */
+let autoMorningBusy = false, autoMorningTries = 0, autoMorningNextTry = 0;
+function autoMorningFillUi(){
+  const on = document.getElementById('s_autoMorningOn'), tm = document.getElementById('s_autoMorningTime'), info = document.getElementById('s_autoMorningInfo');
+  if(!on) return;
+  on.checked = !!autoMorning.on; tm.value = autoMorning.time || '07:30';
+  info.textContent = 'ផ្ញើរបាយការណ៍ទិន្នន័យថ្ងៃម្សិលមិញ ដូចប៊ូតុង ✈️ Telegram រាល់ថ្ងៃតាមម៉ោងនេះ។ កម្មវិធីត្រូវបើកនៅឧបករណ៍មួយ (ឧ. កុំព្យូទ័រគ្លីនិក)។ ផ្ញើចុងក្រោយ៖ ' + (autoMorning.last || '—');
+}
+async function autoMorningTick(){
+  const a = autoMorning;
+  if(!a.on || autoMorningBusy || !webAppUrl || !navigator.onLine) return;
+  const now = new Date(), today = morningYmd(now);
+  if(a.last === today) return;
+  const [h, m] = String(a.time || '07:30').split(':').map(Number);
+  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h || 0, m || 0);
+  if(now < due || now - due > 3 * 3600 * 1000) return;           // only from the set time up to 3 hours after
+  if(Date.now() < autoMorningNextTry) return;
+  autoMorningBusy = true;
+  try{
+    await fetchSettings(true);                                    // another device may already have sent today's report
+    if(autoMorning.last === today) return;
+    autoMorning.last = today; stStore(AUTO_MORNING_KEY, autoMorning);
+    pushChangedSettings();                                        // claim today first, so two open devices never both send
+    const r = await morningAutoCore();
+    if(r.ok){ autoMorningTries = 0; }
+    else{                                                         // failed → release the claim and try again in 5 min (3 tries)
+      autoMorning.last = ''; stStore(AUTO_MORNING_KEY, autoMorning); pushChangedSettings();
+      autoMorningTries++; autoMorningNextTry = Date.now() + (autoMorningTries >= 3 ? 24 * 3600 * 1000 : 5 * 60 * 1000);
+    }
+  }catch(e){
+    autoMorning.last = ''; stStore(AUTO_MORNING_KEY, autoMorning); pushChangedSettings();
+    autoMorningTries++; autoMorningNextTry = Date.now() + (autoMorningTries >= 3 ? 24 * 3600 * 1000 : 5 * 60 * 1000);
+  }finally{
+    autoMorningBusy = false;
+    try{ autoMorningFillUi(); }catch(e){}
+  }
+}
+setInterval(autoMorningTick, 30000);
+setTimeout(autoMorningTick, 9000);
+if(/[?&]autosend=morning\b/.test(location.search)){
+  window.addEventListener('load', () => setTimeout(autoSendMorning, 1500));
+}
 
 function populateReportYearOptions() {
     const yearSel = document.getElementById('reportFilterYear');
@@ -10103,6 +10274,7 @@ function saveOrgForm(){
 
 /* load the org chart + shared lists once shortly after start (ticker photos, Settings lists) */
 setTimeout(()=>{ try{ fetchOrgChart(true); }catch(e){} }, 2500);
+setTimeout(()=>{ try{ fetchSettings(true); }catch(e){} }, 3500);
 (function initOrgChart(){
   orgLoad();
   renderOrgChart();
@@ -11160,6 +11332,86 @@ function openExamForm(prefill){
   }
   setTimeout(()=> URL.revokeObjectURL(url), 120000);
 }
+
+/* ===== Styled dropdowns: the browser's own list (macOS/iOS/Android) ignores colours/sizes, so the 5 data dropdowns use
+   this list instead — group headings (## …) are shown big, bold, blue and cannot be picked. The real <select> stays
+   in the page (hidden) and keeps the value, so saving / editing / Sheet sync work exactly as before. ===== */
+(function(){
+  const IDS = ['f_type', 'f_diagnosis', 'f_treatment', 'f_procedure_select', 'plan_treatment'];
+  const valD = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  const idxD = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+  let cur = null;
+  function closeAll(){ if(cur){ cur.panel.remove(); cur.btn.classList.remove('open'); document.removeEventListener('keydown', cur.key, true); cur = null; } }
+  document.addEventListener('mousedown', e => { if(cur && !cur.panel.contains(e.target) && !cur.btn.contains(e.target)) closeAll(); }, true);
+  document.addEventListener('touchstart', e => { if(cur && !cur.panel.contains(e.target) && !cur.btn.contains(e.target)) closeAll(); }, true);
+  window.addEventListener('scroll', e => { if(cur && !cur.panel.contains(e.target)) closeAll(); }, true);
+  window.addEventListener('resize', closeAll);
+
+  function enhance(sel){
+    if(!sel || sel._csel) return;
+    sel._csel = true;
+    const wrap = document.createElement('div'); wrap.className = 'csel';
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'csel-btn kh';
+    sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(btn); wrap.appendChild(sel);
+    sel.classList.add('csel-native');
+    const label = () => { const o = sel.options[sel.selectedIndex]; btn.textContent = o ? o.textContent : '—'; };
+    Object.defineProperty(sel, 'value', { configurable: true, get(){ return valD.get.call(this); }, set(v){ valD.set.call(this, v); label(); } });
+    Object.defineProperty(sel, 'selectedIndex', { configurable: true, get(){ return idxD.get.call(this); }, set(v){ idxD.set.call(this, v); label(); } });
+    new MutationObserver(() => { closeAll(); label(); }).observe(sel, { childList: true, subtree: true });
+    sel.addEventListener('change', label);
+
+    function open(){
+      if(cur && cur.btn === btn){ closeAll(); return; }
+      closeAll();
+      const panel = document.createElement('div'); panel.className = 'csel-panel kh';
+      const rows = [];
+      const addOpt = (o, grouped) => {
+        const d = document.createElement('div');
+        d.className = 'csel-opt' + (grouped ? '' : ' top') + (o.index === sel.selectedIndex ? ' sel' : '');
+        d.textContent = o.textContent; d._o = o;
+        d.addEventListener('click', () => choose(o));
+        panel.appendChild(d); rows.push(d);
+      };
+      Array.from(sel.children).forEach(ch => {
+        if(ch.tagName === 'OPTGROUP'){
+          const g = document.createElement('div'); g.className = 'csel-group'; g.textContent = ch.label; panel.appendChild(g);
+          Array.from(ch.children).forEach(o => addOpt(o, true));
+        }else if(ch.tagName === 'OPTION') addOpt(ch, false);
+      });
+      document.body.appendChild(panel);
+      const r = btn.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom - 12, above = r.top - 12;
+      const up = below < 240 && above > below;
+      const maxH = Math.max(160, Math.min(380, up ? above : below));
+      panel.style.maxHeight = maxH + 'px';
+      panel.style.minWidth = Math.max(r.width, 260) + 'px';
+      panel.style.left = Math.max(6, Math.min(r.left, window.innerWidth - panel.offsetWidth - 6)) + 'px';
+      panel.style.top = (up ? Math.max(6, r.top - panel.offsetHeight - 4) : r.bottom + 4) + 'px';
+      let active = Math.max(0, rows.findIndex(x => x.classList.contains('sel')));
+      const mark = () => { rows.forEach((x, i) => x.classList.toggle('active', i === active)); if(rows[active]) rows[active].scrollIntoView({ block: 'nearest' }); };
+      const key = e => {
+        if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); closeAll(); btn.focus(); }
+        else if(e.key === 'ArrowDown'){ e.preventDefault(); active = Math.min(rows.length - 1, active + 1); mark(); }
+        else if(e.key === 'ArrowUp'){ e.preventDefault(); active = Math.max(0, active - 1); mark(); }
+        else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); if(rows[active]) choose(rows[active]._o); }
+      };
+      document.addEventListener('keydown', key, true);
+      btn.classList.add('open');
+      cur = { panel, btn, key };
+      mark();
+    }
+    function choose(o){
+      valD.set.call(sel, o.value); label(); closeAll();
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      btn.focus();
+    }
+    btn.addEventListener('click', open);
+    label();
+  }
+  const run = () => IDS.forEach(id => enhance(document.getElementById(id)));
+  run();
+  window.enhanceSelects = run;
+})();
 
 // ចាប់ផ្តើមដំណើរការ
 populateAllSelectDropdowns();
