@@ -6979,18 +6979,30 @@ function morningTime(d){ const h = d.getHours(), m = d.getMinutes(); if(!h && !m
 function morningReportData(){
   const day = morningDataDay(), apptDay = morningReportDate();
   const recs = allRecords.filter(r => cleanStr(r.name) && recordVisitedWhere(r, x => sameDay(x, day)));
+  /* first-ever visit day per patient (new patient) and first visit day per record (new case) */
+  const firstVisit = new Map();
+  allRecords.forEach(r => {
+    if(!cleanStr(r.name)) return;
+    const k = patientKey(r);
+    recordVisitDates(r).forEach(d => { const prev = firstVisit.get(k); if(!prev || d < prev) firstVisit.set(k, d); });
+  });
   const pts = new Map(), tx = {}, cards = {};
-  let cases = 0;
+  let cases = 0, newCases = 0;
   recs.forEach(r => {
     pts.set(patientKey(r), r);
     const list = recordTreatments(r);
-    cases += Math.max(1, list.length);
+    const n = Math.max(1, list.length);
+    cases += n;
+    const rv = recordVisitDates(r).reduce((m, d) => (!m || d < m) ? d : m, null);
+    if(rv && sameDay(rv, day)) newCases += n;   // this record (case) started on the data day
     list.forEach(t => { tx[t] = (tx[t] || 0) + 1; });
     const c = cleanStr(r.type) || 'បង់ពេញថ្លៃ';
     cards[c] = (cards[c] || 0) + 1;
   });
-  let male = 0, female = 0, kids = 0, girls = 0;
-  pts.forEach(p => {
+  let male = 0, female = 0, kids = 0, girls = 0, newPatients = 0;
+  pts.forEach((p, k) => {
+    const fv = firstVisit.get(k);
+    if(fv && sameDay(fv, day)) newPatients++;
     const sex = String(p.sex || '').toUpperCase();
     const isMale = sex === 'M' || sex.includes('ប្រុស');
     if(isMale) male++; else female++;
@@ -7016,7 +7028,7 @@ function morningReportData(){
   });
   const appts = Array.from(apptMap.values()).sort((a, b) => a.d - b.d);
   const caseNote = caseNoteFor(morningYmd(day)).trim();
-  return { day, apptDay, caseNote, patients: pts.size, male, female, kids, girls, cases, tx, cards, appts };
+  return { day, apptDay, caseNote, patients: pts.size, male, female, kids, girls, newPatients, newCases, cases, tx, cards, appts };
 }
 function morningDayLabel(day){ return `ថ្ងៃទី ${day.getDate()} ខែ ${KHMER_MONTHS[day.getMonth()]} ឆ្នាំ ${day.getFullYear()}`; }
 
@@ -7062,6 +7074,8 @@ function buildMorningCardsHTML(){
   ${grid(
     card('', 'សរុបជំងឺ (Total)', D.patients, big) +
     card('', 'សរុបករណី (Case)', D.cases, big) +
+    card('type-blue', 'អ្នកជំងឺថ្មី (New Patient)', D.newPatients) +
+    card('type-yellow', 'ករណីថ្មី (New Case)', D.newCases) +
     card('type-red', 'ស្រី (Female)', D.female) +
     card('type-blue', 'ប្រុស (Male)', D.male) +
     card('type-yellow', 'ក្មេង (ស្មើឬក្រោម១៥)', D.kids) +
@@ -7203,7 +7217,7 @@ function morningCaption(){
     `${morningDayLabel(D.apptDay)} · ${(clinicInfo && clinicInfo.name) || 'Dental Service'}`,
     `ទិន្នន័យ ${morningDayLabel(D.day)}`,
     '',
-    `១. អ្នកជំងឺ: ${D.patients} (ស្រី ${D.female} · ប្រុស ${D.male} · ក្មេង ${D.kids})`,
+    `១. អ្នកជំងឺ: ${D.patients} (ស្រី ${D.female} · ប្រុស ${D.male} · ក្មេង ${D.kids}) · អ្នកជំងឺថ្មី ${D.newPatients} · ករណីថ្មី ${D.newCases}`,
     `២. ប្រភេទករណី: ${D.cases}`
   ];
   Object.keys(D.tx).sort((a, b) => D.tx[b] - D.tx[a]).slice(0, 8).forEach(n => L.push(`   • ${n}: ${D.tx[n]}`));
