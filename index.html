@@ -2681,6 +2681,15 @@
       </div>
       <button class="x" id="closeMorning">✕</button></div>
     <div class="modal-body">
+      <style>
+      .mr-tick{overflow:hidden;white-space:nowrap;margin-bottom:12px;padding:8px 0;background:#FFF8E1;border:1px solid #F5D88A;border-radius:10px;}
+      .mr-tick-track{display:inline-flex;width:max-content;animation:mrTick 28s linear infinite;}
+      .mr-tick-track:hover{animation-play-state:paused;}
+      .mr-tick-track span{padding:0 48px;font-size:13px;font-weight:700;color:#7A5200;font-family:'Noto Sans Khmer',sans-serif;}
+      @keyframes mrTick{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+      @media (prefers-reduced-motion:reduce){.mr-tick{white-space:normal;} .mr-tick-track{animation:none;width:auto;} .mr-tick-track span:nth-child(2){display:none;}}
+      </style>
+      <div class="mr-tick kh"><div class="mr-tick-track"><span>📢 ការរាយការណ៍នេះ នឹងផ្ញើ Auto ទៅតេលេក្រាមរាល់ព្រឹក។ ករណីមាន Case អ្នកជំងឺណាចាំបាច់ត្រូវរាយការណ៍លើកមកជជែក ត្រូវសរសេរបំពេញក្នុងប្រអប់ Case Report ខាងក្រោម ឱ្យបានរួចរាល់។</span><span aria-hidden="true">📢 ការរាយការណ៍នេះ នឹងផ្ញើ Auto ទៅតេលេក្រាមរាល់ព្រឹក។ ករណីមាន Case អ្នកជំងឺណាចាំបាច់ត្រូវរាយការណ៍លើកមកជជែក ត្រូវសរសេរបំពេញក្នុងប្រអប់ Case Report ខាងក្រោម ឱ្យបានរួចរាល់។</span></div></div>
       <div class="kh" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;">
         <label class="mono" style="font-size:12px;color:var(--ink-dim);">កាលបរិច្ឆេទទិន្នន័យ</label>
         <input type="date" id="morningDate" class="kh" style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;">
@@ -2738,15 +2747,7 @@
       <div class="field" style="margin-bottom:10px;"><div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">អាសយដ្ឋាន</div><input type="text" id="s_address"></div>
       <div class="field" style="margin-bottom:16px;"><div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">ទូរស័ព្ទ</div><input type="text" id="s_phone"></div>
       <hr style="border:none;border-top:1px solid var(--border-soft);margin:4px 0 16px;">
-      <div style="margin-bottom:16px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface-2);">
-        <div class="kh" style="font-size:12.5px;font-weight:800;color:var(--primary-dark);margin-bottom:8px;">☀️ ផ្ញើរបាយការណ៍ពេលព្រឹក Auto → Telegram</div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <label class="kh" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer;"><input type="checkbox" id="s_autoMorningOn"> បើក</label>
-          <label class="kh" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;">ម៉ោង <input type="time" id="s_autoMorningTime" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;background:var(--surface);color:var(--ink);"></label>
-        </div>
-        <div class="kh" id="s_autoMorningInfo" style="font-size:11.5px;color:var(--ink-dim);margin-top:8px;line-height:1.6;"></div>
-      </div>
-      <div class="field" style="margin-bottom:8px;">
+            <div class="field" style="margin-bottom:8px;">
         <div class="k" style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:5px;">🔄 Google Sheet Sync URL (Apps Script)</div>
         <input type="text" id="s_webappurl">
       </div>
@@ -6315,9 +6316,6 @@ function openSettings(){
 function saveSettings(){
   clinicInfo = { name: document.getElementById('s_clinicName').value.trim() || 'Kep Hospital-Dental Service', address: document.getElementById('s_address').value.trim(), phone: document.getElementById('s_phone').value.trim() };
   stStore(CLINIC_INFO_KEY, clinicInfo);
-  { const on = !!document.getElementById('s_autoMorningOn').checked, tm = document.getElementById('s_autoMorningTime').value || '07:30';
-    if(on !== autoMorning.on || tm !== autoMorning.time) autoMorning.last = '';     // changed on purpose → may send again today
-    autoMorning.on = on; autoMorning.time = tm; stStore(AUTO_MORNING_KEY, autoMorning); }
   scheduleSettingsPush(); flushSettingsNow();
   webAppUrl = document.getElementById('s_webappurl').value.trim();
   localStorage.setItem('kep_dental_webapp_url', webAppUrl);
@@ -7036,7 +7034,7 @@ function buildMorningCardsHTML(){
   const D = morningReportData();
   const card = (cls, label, n, extra) => `<div class="type-stat-card ${cls}" ${extra || ''}><span class="type-stat-name kh">${esc(label)}</span><div class="type-stat-count" style="font-size:20px;">${n}</div></div>`;
   const grid = inner => `<div class="mrc-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;">${inner}</div>`;
-  const none = t => `<div style="text-align:center;font-size:12px;color:var(--ink-dim);padding:12px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">${t}</div>`;
+  const none = t => `<div class="kh" style="font-family:'Noto Sans Khmer',sans-serif;font-weight:400;text-align:center;font-size:12px;color:var(--ink-dim);padding:12px;background:var(--surface-2);border-radius:12px;border:1px dashed var(--border);">${t}</div>`;
   const big = 'style="background:var(--primary-softer);border-color:var(--primary);"';
   const txKeys = Object.keys(D.tx).sort((a, b) => D.tx[b] - D.tx[a]);
   const cardKeys = Object.keys(D.cards).sort((a, b) => D.cards[b] - D.cards[a]);
@@ -7235,6 +7233,36 @@ function morningBlobToBase64(blob){
     r.readAsDataURL(blob);
   });
 }
+/* ===== 📄 Telegram format: 'pdf' = A4 portrait PDF file (same look as the 📄 PDF button) · 'jpg' = picture (old way) ===== */
+const MORNING_TG_FORMAT = 'jpg';
+async function morningPdfBase64(){
+  if(!window.html2canvas) await morningLoadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!(window.jspdf && window.jspdf.jsPDF)) await morningLoadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  /* same desktop-mode (794px = A4 portrait) rendering as morningJpegBlob(), so a phone and a computer give the same PDF */
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:0;top:0;z-index:-1;width:794px;background:#fff;pointer-events:none;';
+  host.innerHTML = buildMorningCardsHTML();
+  const sheet = host.querySelector('.print-sheet') || host;
+  sheet.style.width = '794px';
+  document.body.appendChild(host);
+  let canvas;
+  try{
+    canvas = await window.html2canvas(sheet, {
+      scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false,
+      windowWidth: 1280, windowHeight: 900, scrollX: 0, scrollY: 0,
+      onclone: doc => { try{ doc.body.classList.remove('mobile-mode'); }catch(e){} }
+    });
+  }finally{
+    if(host.parentNode) host.parentNode.removeChild(host);
+  }
+  const pdf = new window.jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+  const pw = 210, ph = 297;
+  let w = pw, h = canvas.height * pw / canvas.width;
+  if(h > ph){ w = w * ph / h; h = ph; }                      // taller than one page → shrink to keep ONE page
+  pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', (pw - w) / 2, 0, w, h);
+  return pdf.output('datauristring').split(',')[1];
+}
 /* one click: picture of the report + short summary → Telegram, through the Apps Script (the bot token stays there, never in this page) */
 async function sendMorningToTelegram(){
   if(!navigator.onLine || !webAppUrl){ setMorningStatus('⚠️ ត្រូវការអ៊ីនធឺណិត និង Web App URL', 'warn'); return; }
@@ -7242,17 +7270,19 @@ async function sendMorningToTelegram(){
   const label = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ ...';
   try{
-    setMorningStatus('⏳ កំពុងបង្កើតរូបភាព...', '');
-    const blob = await morningJpegBlob();   // same desktop-mode picture as the 🖼️ JPEG button
-    const base64 = await morningBlobToBase64(blob);
+    const asPdf = (MORNING_TG_FORMAT === 'pdf');
+    setMorningStatus(asPdf ? '⏳ កំពុងបង្កើត PDF...' : '⏳ កំពុងបង្កើតរូបភាព...', '');
+    const base64 = asPdf
+      ? await morningPdfBase64()                                          // A4 portrait PDF, same look as the 📄 PDF button
+      : await morningBlobToBase64(await morningJpegBlob());               // same desktop-mode picture as the 🖼️ JPEG button
     setMorningStatus('⏳ កំពុងផ្ញើទៅ Telegram...', '');
     let result = null;
     try{
       const res = await fetch(webAppUrl, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'sendTelegram', data: {
-          caption: morningCaption(), filename: morningFileStem() + '.jpg',
-          mimeType: 'image/jpeg', base64 }, timestamp: Date.now() })
+          caption: morningCaption(), filename: morningFileStem() + (asPdf ? '.pdf' : '.jpg'),
+          mimeType: asPdf ? 'application/pdf' : 'image/jpeg', base64, asDocument: asPdf }, timestamp: Date.now() })
       });
       result = await res.json();
     }catch(e){ result = null; }   // the request was sent; only the reply could not be read
@@ -7374,6 +7404,7 @@ function autoMorningFillUi(){
   info.textContent = 'ផ្ញើរបាយការណ៍ទិន្នន័យថ្ងៃម្សិលមិញ ដូចប៊ូតុង ✈️ Telegram រាល់ថ្ងៃតាមម៉ោងនេះ។ កម្មវិធីត្រូវបើកនៅឧបករណ៍មួយ (ឧ. កុំព្យូទ័រគ្លីនិក)។ ផ្ញើចុងក្រោយ៖ ' + (autoMorning.last || '—');
 }
 async function autoMorningTick(){
+  return;   // disabled: the report is sent automatically by GitHub Actions (auto-send.mjs), so the app never sends it by itself
   const a = autoMorning;
   if(!a.on || autoMorningBusy || !webAppUrl || !navigator.onLine) return;
   const now = new Date(), today = morningYmd(now);
