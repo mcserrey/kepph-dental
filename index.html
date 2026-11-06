@@ -2361,8 +2361,13 @@
 <div class="overlay hidden" id="listsSettingOverlay" style="z-index: 120;">
   <div class="modal" style="max-width: 650px;">
     <div class="modal-head">
-      <h2 class="kh">⚙️ ការកំណត់ជម្រើសទិន្នន័យ (Settings)</h2>
-      <button class="x" id="closeListsSetting">✕</button>
+      <h2 class="kh" style="flex:1;min-width:0;">⚙️ ការកំណត់ជម្រើសទិន្នន័យ (Settings)</h2>
+      <div style="display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-left:8px;">
+        <button type="button" class="btn btn-outline btn-sm kh" id="listsImportBtn" title="នាំចូលពី Excel · Import from Excel" style="padding:4px 9px;font-size:11.5px;white-space:nowrap;">📥 Import</button>
+        <button type="button" class="btn btn-outline btn-sm kh" id="listsExportBtn" title="នាំចេញជា Excel · Export to Excel" style="padding:4px 9px;font-size:11.5px;white-space:nowrap;">📤 Export</button>
+        <button class="x" id="closeListsSetting">✕</button>
+      </div>
+      <input type="file" id="listsImportFile" accept=".xlsx,.xls,.csv" style="display:none;">
     </div>
     <div class="modal-body">
       <div style="display: flex; gap: 6px; border-bottom: 1.5px solid var(--border); padding-bottom: 8px; margin-bottom: 14px; flex-wrap: wrap;">
@@ -3209,6 +3214,145 @@ document.getElementById('closeListsSetting').addEventListener('click', () => {
 document.getElementById('saveListsSettingBtn').addEventListener('click', () => {
   flushListsNow();
   document.getElementById('listsSettingOverlay').classList.add('hidden');
+});
+
+/* ==========================================================
+   Import / Export (Excel) — Treatment · Diagnosis · Procedures · Registration Card
+   Export: one .xlsx, one sheet per list (columns: # | ឈ្មោះ (Name) | ក្រុម (Group)).
+   Import: reads the same layout back; sheets are matched by name. Choose Merge or Replace.
+   ========================================================== */
+const LIST_XLSX_SHEETS = [
+  { key:'treatment', name:'Treatment',         alias:/^(treatment|treat)/i },
+  { key:'diagnosis', name:'Diagnosis',         alias:/^(diagnosis|diag)/i },
+  { key:'procedure', name:'Procedures',        alias:/^(procedure|proc)/i },
+  { key:'regcard',   name:'Registration Card', alias:/^(registration|regcard|reg\s*card|card)/i }
+];
+function listsToast(msg){
+  const el = document.createElement('div');
+  el.className = 'kh';
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:1000;max-width:90vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25);';
+  document.body.appendChild(el);
+  setTimeout(()=>{ try{ document.body.removeChild(el); }catch(e){} }, 3200);
+}
+let _xlsxLoading = null;
+function loadXlsxLib(){
+  if(window.XLSX) return Promise.resolve();
+  if(_xlsxLoading) return _xlsxLoading;
+  _xlsxLoading = new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    el.onload = resolve;
+    el.onerror = () => { _xlsxLoading = null; reject(new Error('Cannot load Excel library (need internet)')); };
+    document.head.appendChild(el);
+  });
+  return _xlsxLoading;
+}
+async function exportListsToExcel(){
+  try{
+    await loadXlsxLib();
+    const wb = XLSX.utils.book_new();
+    LIST_XLSX_SHEETS.forEach(s => {
+      const rows = [['#', 'ឈ្មោះ (Name)', 'ក្រុម (Group)']];
+      (appCustomLists[s.key] || []).forEach((it, i) => {
+        rows.push([i + 1, groupLabel(it), isGroupHead(it) ? '✓' : '']);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch:5 }, { wch:44 }, { wch:14 }];
+      XLSX.utils.book_append_sheet(wb, ws, s.name);
+    });
+    XLSX.writeFile(wb, 'Settings_Lists_' + getLocalTodayYMD() + '.xlsx');
+    listsToast('📤 បាននាំចេញ Excel រួចរាល់');
+  }catch(err){
+    alert('Export មិនបានសម្រេច: ' + (err && err.message ? err.message : err));
+  }
+}
+function parseListSheet(ws){
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', blankrows:false });
+  if(!rows.length) return [];
+  const head = (rows[0] || []).map(c => String(c).trim().toLowerCase());
+  let nameCol = head.findIndex(c => /name|ឈ្មោះ/.test(c));
+  let groupCol = head.findIndex(c => /group|ក្រុម/.test(c));
+  const hasHeader = nameCol >= 0 || groupCol >= 0 || head[0] === '#';
+  if(nameCol < 0) nameCol = (head[0] === '#') ? 1 : 0;
+  if(groupCol < 0) groupCol = nameCol + 1;
+  const out = [], seen = new Set();
+  rows.slice(hasHeader ? 1 : 0).forEach(r => {
+    let name = String(r[nameCol] == null ? '' : r[nameCol]).trim();
+    if(!name) return;
+    const gv = String(r[groupCol] == null ? '' : r[groupCol]).trim().toLowerCase();
+    let isG = !!gv && !/^(0|no|n|false|-)$/.test(gv);
+    if(isGroupHead(name)){ isG = true; name = groupLabel(name); }
+    if(!name) return;
+    const val = isG ? GROUP_PREFIX + name : name;
+    if(seen.has(val)) return;
+    seen.add(val); out.push(val);
+  });
+  return out;
+}
+function askImportMode(summary){
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.style.zIndex = '999';
+    ov.innerHTML = `<div class="modal narrow" style="max-width:400px;">
+      <div class="modal-body" style="padding:24px 22px;text-align:center;">
+        <div class="kh" style="font-size:13.5px;color:var(--ink);margin-bottom:18px;line-height:1.7;white-space:pre-line;">📥 រកឃើញក្នុង Excel:\n${summary}\n\nជ្រើសរើសវិធីនាំចូល</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-primary kh" data-m="merge">➕ បន្ថែមតែថ្មី (Merge) — រក្សាទុកជម្រើសចាស់</button>
+          <button class="btn btn-outline kh" data-m="replace" style="border-color:var(--danger,#dc2626);color:var(--danger,#dc2626);">♻️ ជំនួសទាំងអស់ (Replace)</button>
+          <button class="btn btn-ghost kh" data-m="cancel">បោះបង់ Cancel</button>
+        </div>
+      </div></div>`;
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e => {
+      const b = e.target.closest('[data-m]'); if(!b) return;
+      document.body.removeChild(ov);
+      resolve(b.dataset.m);
+    });
+  });
+}
+async function importListsFromExcel(file){
+  if(!file) return;
+  try{
+    await loadXlsxLib();
+    const wb = XLSX.read(await file.arrayBuffer(), { type:'array' });
+    const found = {};   // key -> items
+    wb.SheetNames.forEach(sn => {
+      const def = LIST_XLSX_SHEETS.find(s => s.alias.test(sn.trim()));
+      if(def && !found[def.key]) found[def.key] = parseListSheet(wb.Sheets[sn]);
+    });
+    if(!Object.keys(found).length && wb.SheetNames.length === 1){      // one unnamed sheet → the tab that is open
+      found[currentSettingTab] = parseListSheet(wb.Sheets[wb.SheetNames[0]]);
+    }
+    Object.keys(found).forEach(k => { if(!found[k].length) delete found[k]; });
+    const keys = Object.keys(found);
+    if(!keys.length){ alert('រកមិនឃើញទិន្នន័យក្នុង Excel ទេ។\nSheet ត្រូវមានឈ្មោះ: Treatment, Diagnosis, Procedures, Registration Card'); return; }
+    const summary = keys.map(k => '• ' + LIST_XLSX_SHEETS.find(s => s.key === k).name + ': ' + found[k].length).join('\n');
+    const mode = await askImportMode(summary);
+    if(mode !== 'merge' && mode !== 'replace') return;
+    let added = 0;
+    keys.forEach(k => {
+      if(mode === 'replace'){ appCustomLists[k] = found[k].slice(); added += found[k].length; }
+      else{
+        const cur = appCustomLists[k] || (appCustomLists[k] = []);
+        found[k].forEach(v => { if(!cur.includes(v)){ cur.push(v); added++; } });
+      }
+    });
+    saveCustomLists();
+    renderOptionsList();
+    flushListsNow();
+    listsToast('📥 នាំចូលរួចរាល់ · ' + (mode === 'replace' ? 'ជំនួស ' : 'បន្ថែមថ្មី ') + added);
+  }catch(err){
+    alert('Import មិនបានសម្រេច: ' + (err && err.message ? err.message : err));
+  }
+}
+document.getElementById('listsExportBtn').addEventListener('click', exportListsToExcel);
+document.getElementById('listsImportBtn').addEventListener('click', () => document.getElementById('listsImportFile').click());
+document.getElementById('listsImportFile').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  importListsFromExcel(f);
 });
 
 /* ==========================================================
