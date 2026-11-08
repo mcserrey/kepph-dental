@@ -956,11 +956,11 @@
   .opt-row{display:flex;align-items:center;gap:8px;background:#fff;padding:6px 8px;border-radius:8px;margin-bottom:5px;border:1px solid var(--border-soft);}
   .opt-row.dragging{opacity:.4;}
   .opt-row.drag-over{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-soft);}
-  .opt-row.opt-head{background:var(--primary-soft);border-color:var(--primary);border-left:4px solid var(--primary);margin-top:9px;}
-  .opt-row.opt-head .opt-name{font-weight:800;color:var(--primary-dark);font-size:13px;}
+  .opt-row.opt-head{background:#EFF6FF;border-color:#BFDBFE;border-left:4px solid #2563EB;margin-top:9px;}
+  .opt-row.opt-head .opt-name{font-weight:800;color:#1D4ED8;font-size:13px;}
   .opt-btns button.on{background:var(--primary-strong);border-color:var(--primary-strong);color:#fff;}
-  select optgroup{font-weight:900;font-style:normal;font-size:16px;color:#14532D;background:#DCFCE7;}
-  select optgroup option{font-weight:500;font-size:14px;color:var(--ink);background:#fff;padding-left:18px;}
+  select optgroup{font-weight:800;font-style:normal;font-size:14px;color:#1D4ED8;background:#EFF6FF;}
+  select optgroup option{font-weight:500;font-size:13.5px;color:var(--ink);background:#fff;padding-left:18px;}
   .morning-bar{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto;margin-right:8px;align-items:center;}
 #morningOverlay .modal-head{flex-wrap:wrap;gap:8px;}
   .morning-bar .btn{padding:5px 11px;font-size:12px;min-height:0;white-space:nowrap;}
@@ -970,8 +970,8 @@
   .csel-btn::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--ink-dim);}
   .csel-btn.open,.csel-btn:focus{border-color:var(--primary);outline:none;}
   .csel-panel{position:fixed;z-index:5000;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 32px rgba(10,45,25,.24);overflow-y:auto;padding:4px;}
-  .csel-group{font-weight:900;font-size:16px;color:#14532D;background:#DCFCE7;padding:8px 12px;margin:6px 0 2px;border-radius:7px;line-height:1.5;}
-  .csel-opt{padding:7px 12px 7px 28px;font-size:14px;border-radius:7px;cursor:pointer;color:var(--ink);line-height:1.5;}
+  .csel-group{font-weight:800;font-size:13.5px;color:#1D4ED8;background:#EFF6FF;border-left:3px solid #2563EB;padding:5px 10px;margin:6px 0 2px;border-radius:6px;line-height:1.45;cursor:default;}
+  .csel-opt{padding:6px 12px 6px 26px;font-size:13.5px;border-radius:7px;cursor:pointer;color:var(--ink);line-height:1.5;}
   .csel-opt.top{padding-left:12px;}
   .csel-opt:hover,.csel-opt.active{background:var(--primary-soft);}
   .csel-opt.sel{font-weight:700;color:var(--primary-dark);}
@@ -2385,10 +2385,12 @@
 
       <div id="optionsListContainer" style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border-soft); border-radius: 8px; padding: 8px; background: var(--surface-2);">
       </div>
+      <div id="listsSyncStatus" class="kh" style="font-size:11.5px;color:var(--ink-dim);margin-top:8px;min-height:16px;"></div>
 
       <div class="modal-actions" style="margin-top: 15px;">
         <div class="left-action">
           <button type="button" class="btn btn-outline btn-sm kh" onclick="resetOptionsToDefault()">🔄 លំនាំដើម (Default)</button>
+          <button type="button" class="btn btn-outline btn-sm kh" id="listsSyncBtn" title="Sync ទៅ Google Sheet (Tab Setting-…)">☁️ Sync Sheet</button>
         </div>
         <button type="button" class="btn btn-primary btn-sm kh" id="saveListsSettingBtn">រួចរាល់ Done</button>
       </div>
@@ -2893,7 +2895,7 @@ let autoMorning = Object.assign({ on: false, time: '07:30', last: '' }, stJson(A
 
 function stJson(k){ try{ const o = JSON.parse(localStorage.getItem(k)); return o && typeof o === 'object' ? o : {}; }catch(e){ return {}; } }
 function stStore(k, o){ try{ localStorage.setItem(k, JSON.stringify(o)); }catch(e){} }
-function settingKeys(){ return ['clinic.name','clinic.address','clinic.phone','auto.morning.on','auto.morning.time','auto.morning.last'].concat(Object.keys(DEFAULT_LISTS).map(k => 'list.' + k)); }
+function settingKeys(){ return ['clinic.name','clinic.address','clinic.phone','auto.morning.on','auto.morning.time','auto.morning.last']; }
 function settingValue(key){
   if(key === 'auto.morning.on') return autoMorning.on ? '1' : '0';
   if(key === 'auto.morning.time') return String(autoMorning.time || '07:30');
@@ -2949,7 +2951,7 @@ function scheduleSettingsPush(){
 function flushSettingsNow(){        // Done / close / Save / leaving the page → send a waiting change right away
   if(settingsPushTimer){ clearTimeout(settingsPushTimer); pushChangedSettings(); }
 }
-function flushListsNow(){ flushSettingsNow(); }
+function flushListsNow(){ flushSettingsNow(); try{ flushListTabsNow(); }catch(e){} }
 window.addEventListener('pagehide', flushSettingsNow);
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden') flushSettingsNow();
@@ -2959,9 +2961,10 @@ function saveCustomLists(fromRemote) {
   try{ localStorage.setItem('dental_custom_lists_app', JSON.stringify(appCustomLists)); }catch(e){}
   try{ populateAllSelectDropdowns(); }catch(e){}
   try{ renderCardTypeStats(); }catch(e){}
-  if(!fromRemote) scheduleSettingsPush();      // a local change → keep it in the Sheet "Setting" too
+  if(!fromRemote) scheduleListTabsPush();      // a local change → keep it in the Sheet tabs "Setting-…" too
 }
 async function fetchSettings(silent){
+  try{ fetchListTabs(silent); }catch(e){}
   if(!webAppUrl || settingsFetching || !navigator.onLine) return;
   settingsFetching = true;
   const badge = document.getElementById('syncBadge');
@@ -3206,6 +3209,7 @@ document.getElementById('listsSettingBtn').addEventListener('click', () => {
   tabs.forEach((b, i) => { b.className = 'btn btn-sm kh opt-tab ' + (order[i] === currentSettingTab ? 'btn-primary' : 'btn-ghost'); });
   renderOptionsList();
   document.getElementById('listsSettingOverlay').classList.remove('hidden');
+  try{ fetchListTabs(true); }catch(e){}
 });
 document.getElementById('closeListsSetting').addEventListener('click', () => {
   flushListsNow();
@@ -3222,10 +3226,10 @@ document.getElementById('saveListsSettingBtn').addEventListener('click', () => {
    Import: reads the same layout back; sheets are matched by name. Choose Merge or Replace.
    ========================================================== */
 const LIST_XLSX_SHEETS = [
-  { key:'treatment', name:'Treatment',         alias:/^(treatment|treat)/i },
-  { key:'diagnosis', name:'Diagnosis',         alias:/^(diagnosis|diag)/i },
-  { key:'procedure', name:'Procedures',        alias:/^(procedure|proc)/i },
-  { key:'regcard',   name:'Registration Card', alias:/^(registration|regcard|reg\s*card|card)/i }
+  { key:'treatment', name:'Treatment',         alias:/^(setting[-_ ]*)?(treatment|treat)/i },
+  { key:'diagnosis', name:'Diagnosis',         alias:/^(setting[-_ ]*)?(diagnosis|diag)/i },
+  { key:'procedure', name:'Procedures',        alias:/^(setting[-_ ]*)?(procedure|proc)/i },
+  { key:'regcard',   name:'Registration Card', alias:/^(setting[-_ ]*)?(registration|regcard|reg\s*card|card)/i }
 ];
 function listsToast(msg){
   const el = document.createElement('div');
@@ -3354,6 +3358,106 @@ document.getElementById('listsImportFile').addEventListener('change', e => {
   e.target.value = '';
   importListsFromExcel(f);
 });
+
+/* ==========================================================
+   Sync Settings lists → Google Sheet, one tab per list:
+   Setting-Treatment · Setting-Diagnosis · Setting-Procedures · Setting-RegCard
+   Columns: No | Name | Group (✓ = heading) | Updated.  Two-way: edit in the Sheet → Sync pulls it in.
+   Needs the ListTabs functions in Code.gs (file Code_ListTabs.gs).
+   ========================================================== */
+const LT_KEYS = ['treatment', 'diagnosis', 'procedure', 'regcard'];
+const LT_TABS = { treatment:'Setting-Treatment', diagnosis:'Setting-Diagnosis', procedure:'Setting-Procedures', regcard:'Setting-RegCard' };
+const LT_SNAP_KEY = 'kep_listtabs_snap_v1';   // {key: list text last known to be in sync with the Sheet}
+const LT_TS_KEY = 'kep_listtabs_ts_v1';       // {key: ms of the last known change}
+let ltFetching = false, ltPushTimer = null;
+
+function ltSetStatus(msg, warn){
+  const el = document.getElementById('listsSyncStatus'); if(!el) return;
+  el.textContent = msg || '';
+  el.style.color = warn ? '#B45309' : 'var(--ink-dim)';
+}
+function ltStr(items){ return (items || []).join('\n'); }
+function ltClock(){ return new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }); }
+function ltItemsToRows(items){ return (items || []).map(x => ({ name: groupLabel(x), group: isGroupHead(x) })); }
+function ltRowsToItems(rows){
+  const out = [], seen = new Set();
+  (rows || []).forEach(r => {
+    const name = String(r && r.name != null ? r.name : '').trim(); if(!name) return;
+    const gv = String(r.group == null ? '' : r.group).trim().toLowerCase();
+    const isG = !!gv && !/^(0|no|n|false|-)$/.test(gv);
+    const val = isG ? GROUP_PREFIX + name : name;
+    if(seen.has(val)) return; seen.add(val); out.push(val);
+  });
+  return out;
+}
+function ltPush(key, ts){
+  try{ savePendingQueue(getPendingQueue().filter(x => !(x && x.action === 'listTabsSave' && x.data && x.data.key === key))); }catch(e){}
+  pushToSheet('listTabsSave', { key, tab: LT_TABS[key], items: ltItemsToRows(appCustomLists[key]), updated: new Date(ts || Date.now()).toISOString() });
+}
+function pushChangedListTabs(){
+  ltPushTimer = null;
+  const ts = stJson(LT_TS_KEY), snap = stJson(LT_SNAP_KEY), now = Date.now();
+  let n = 0;
+  LT_KEYS.forEach(k => {
+    const s = ltStr(appCustomLists[k]);
+    if(snap[k] === s) return;
+    ts[k] = now; snap[k] = s; ltPush(k, now); n++;
+  });
+  stStore(LT_TS_KEY, ts); stStore(LT_SNAP_KEY, snap);
+  if(n) ltSetStatus('☁️ កំពុងបញ្ជូនទៅ Google Sheet...');
+}
+function scheduleListTabsPush(){ clearTimeout(ltPushTimer); ltPushTimer = setTimeout(pushChangedListTabs, 250); }
+function flushListTabsNow(){ if(ltPushTimer){ clearTimeout(ltPushTimer); pushChangedListTabs(); } }
+
+async function fetchListTabs(silent){
+  if(!webAppUrl || ltFetching || !navigator.onLine) return;
+  ltFetching = true;
+  try{
+    await flushPendingQueue();
+    const sep = webAppUrl.includes('?') ? '&' : '?';
+    const res = await fetch(`${webAppUrl}${sep}listTabs=1&_=${Date.now()}`);
+    const json = await res.json();
+    if(!(json && json.status === 'success' && json.sheet === 'ListTabs' && json.data && !Array.isArray(json.data))){
+      ltSetStatus('⚠️ Apps Script មិនទាន់មាន ListTabs — សូមដាក់កូដ Code_ListTabs.gs ក្នុង Code.gs ហើយ Deploy ថ្មី', true);
+      return;
+    }
+    const pending = new Set(getPendingQueue().filter(q => q && q.action === 'listTabsSave' && q.data).map(q => q.data.key));
+    const ts = stJson(LT_TS_KEY), snap = stJson(LT_SNAP_KEY);
+    let pulled = false;
+    LT_KEYS.forEach(k => {
+      if(pending.has(k)) return;
+      const ls = ltStr(appCustomLists[k]);
+      const rrows = json.data[k];
+      if(!Array.isArray(rrows) || !rrows.length){          // the tab is missing or empty → create / refill it from this device
+        if(snap[k] === ls && ls === '') return;
+        ts[k] = ts[k] || Date.now(); snap[k] = ls; ltPush(k, ts[k]); return;
+      }
+      const ritems = ltRowsToItems(rrows), rs = ltStr(ritems);
+      if(rs === ls){ snap[k] = ls; return; }
+      const rts = rrows.reduce((m, r) => Math.max(m, Date.parse(r.updated) || 0), 0), lts = ts[k] || 0;
+      let useRemote;
+      if(snap[k] === undefined) useRemote = (ls === ltStr(DEFAULT_LISTS[k])) || rts >= lts;   // first time on this device
+      else if(snap[k] === ls) useRemote = true;      // only the Sheet changed (e.g. edited by hand)
+      else if(snap[k] === rs) useRemote = false;     // only this device changed
+      else useRemote = rts > lts;                    // both changed → the newer one wins
+      if(useRemote){ appCustomLists[k] = ritems; snap[k] = rs; ts[k] = rts || Date.now(); pulled = true; }
+      else{ ts[k] = lts || Date.now(); snap[k] = ls; ltPush(k, ts[k]); }
+    });
+    stStore(LT_TS_KEY, ts); stStore(LT_SNAP_KEY, snap);
+    if(pulled){ saveCustomLists(true); try{ renderOptionsList(); }catch(e){} }
+    ltSetStatus('☁️ Sync Google Sheet ✓ ' + ltClock() + ' · Tab: ' + LT_KEYS.map(k => LT_TABS[k]).join(', '));
+  }catch(e){
+    if(!silent) ltSetStatus('⚠️ Sync មិនជោគជ័យ — សូមពិនិត្យអ៊ីនធឺណិត', true);
+  }finally{
+    ltFetching = false;
+  }
+}
+document.getElementById('listsSyncBtn').addEventListener('click', async () => {
+  ltSetStatus('☁️ កំពុង Sync...');
+  flushListTabsNow();
+  await fetchListTabs(false);
+});
+window.addEventListener('pagehide', () => { try{ flushListTabsNow(); }catch(e){} });
 
 /* ==========================================================
    តកូដ Core Functionality របស់ App
