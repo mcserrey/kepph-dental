@@ -1975,7 +1975,7 @@
       <!-- 5. Treatment statistics (all time) -->
       <div class="card-type-stats-panel rpt-all-panel" style="margin-top: 15px;">
         <div class="card-type-stats-head">
-          <h4 class="kh">ស្ថិតិ Treatment សរុប · Treatment Statistics <small style="font-weight:500;color:var(--ink-dim);">(ចុចលើ Card ដើម្បីមើលឈ្មោះអ្នកជំងឺ)</small></h4>
+          <h4 class="kh">ស្ថិតិ Treatment សរុប · Treatment Statistics</h4>
           <span class="count-pill mono" id="rptTreatTotal">0</span>
         </div>
         <div class="card-type-stats-grid" id="rptTreatRow"></div>
@@ -1984,7 +1984,7 @@
       <!-- 6. Diagnosis (Indication) statistics (all time) -->
       <div class="card-type-stats-panel rpt-all-panel" style="margin-top: 15px;">
         <div class="card-type-stats-head">
-          <h4 class="kh">ស្ថិតិ Diagnosis (Indication) សរុប · Diagnosis Statistics <small style="font-weight:500;color:var(--ink-dim);">(ចុចលើ Card ដើម្បីមើលឈ្មោះអ្នកជំងឺ)</small></h4>
+          <h4 class="kh">ស្ថិតិ Diagnosis (Indication) សរុប · Diagnosis Statistics</h4>
           <span class="count-pill mono" id="rptDiagTotal">0</span>
         </div>
         <div class="card-type-stats-grid" id="rptDiagRow"></div>
@@ -10386,26 +10386,47 @@ function docNameDialog(title, initial, okLabel, onSave){
   ov.querySelector('#docNameOk').addEventListener('click', save);
   input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape') close(); });
 }
+/* Drive really did it? The POST is no-cors (reply unreadable), so after a delete / rename we re-read the folder and warn if Drive still shows the old state. */
+function docsVerify(folderId, id, expectName, failMsg){
+  const started = Date.now();
+  setTimeout(async () => {
+    try{
+      await fetchDocs(true, folderId);
+      const c = docsCache[folderId];
+      if(!c || c.at < started) return;                       // could not re-read → say nothing
+      const it = c.files.concat(c.folders).find(x => x.id === id);
+      const failed = expectName === null ? !!it : (!!it && it.name !== expectName);
+      if(failed) setDocsStatus(failMsg, 'warn');
+    }catch(e){}
+  }, 9000);
+}
 function docRename(item, isFolder){
+  promptForPin('សូមបញ្ចូល PIN ដើម្បីកែសម្រួល · ' + esc(item.name), () => docRenameGo(item, isFolder));   // PIN every time, then back to the same folder list
+}
+function docRenameGo(item, isFolder){
   docNameDialog(isFolder ? '✏️ កែឈ្មោះ Folder · Rename folder' : '✏️ កែឈ្មោះឯកសារ · Rename', item.name, 'រក្សាទុក', nn => {
     if(!docsReady()) return;
     item.name = nn; saveDocsCache(); renderDocs();
     docsPost('renameDoc', { fileId: item.id, newName: nn, isFolder: !!isFolder })
-      .then(()=>{ setDocsStatus('✓ បានកែឈ្មោះ', 'ok', true); docsRefetchSoon(); })
+      .then(()=>{ setDocsStatus('✓ បានកែឈ្មោះ', 'ok', true); docsRefetchSoon(); docsVerify(docsCurId(), item.id, nn, "⚠️ Drive មិនបានប្តូរឈ្មោះទេ — ពិនិត្យ Apps Script (renameDoc) និងសិទ្ធិ Drive"); })
       .catch(()=> setDocsStatus('⚠️ កែឈ្មោះមិនបាន', 'warn', true));
   });
 }
 function docDelete(item, isFolder){
+  promptForPin('សូមបញ្ចូល PIN ដើម្បីលុប · ' + esc(item.name), () => docDeleteGo(item, isFolder));
+}
+function docDeleteGo(item, isFolder){
   if(!docsReady()) return;
   const msg = isFolder
     ? `លុប Folder «${esc(item.name)}» និងឯកសារទាំងអស់ក្នុងនោះ ?\n(ផ្លាស់ទីទៅធុងសំរាមក្នុង Google Drive)`
     : `លុបឯកសារ «${esc(item.name)}» ?\n(ផ្លាស់ទីទៅធុងសំរាមក្នុង Google Drive)`;
   showConfirm(msg, () => {
+    const fid = docsCurId();
     const c = docsCur();
     if(isFolder) c.folders = c.folders.filter(x => x.id !== item.id); else c.files = c.files.filter(x => x.id !== item.id);
     saveDocsCache(); renderDocs();
     docsPost('trashDoc', { fileId: item.id, isFolder: !!isFolder })
-      .then(()=>{ setDocsStatus('✓ បានលុប', 'ok', true); docsRefetchSoon(); })
+      .then(()=>{ setDocsStatus('✓ បានលុប', 'ok', true); docsRefetchSoon(); docsVerify(fid, item.id, null, "⚠️ Drive មិនបានលុបឯកសារនេះទេ (វាត្រឡប់មកវិញ) — ពិនិត្យ Apps Script (trashDoc) និងសិទ្ធិ Drive"); })
       .catch(()=> setDocsStatus('⚠️ លុបមិនបាន', 'warn', true));
   });
 }
