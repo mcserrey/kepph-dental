@@ -1091,6 +1091,19 @@
     #invBody tr.emr-tr{grid-template-columns:var(--inv-cols);}
     #invBody tr.emr-tr td:not(:first-child):not(.inv-actions)::before{display:none;}
   }
+
+  /* ===== Report cards are clickable → patient list ===== */
+  .type-stat-card[data-rc]{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;}
+  .type-stat-card[data-rc]:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm);}
+  .type-stat-card[data-rc]:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+  #rcListBody{max-height:62vh;overflow-y:auto;margin:-4px -4px 0;}
+  .rc-row{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:none;border-bottom:1px solid var(--border-soft);background:none;text-align:left;font-family:inherit;font-size:13px;cursor:pointer;}
+  .rc-row:hover{background:var(--primary-softer);}
+  .rc-row:disabled{cursor:default;opacity:.7;}
+  .rc-no{width:26px;flex:none;font-size:11px;color:var(--ink-dim);}
+  .rc-name{flex:1;min-width:0;font-weight:700;color:var(--ink);}
+  .rc-sub{font-size:11px;color:var(--ink-dim);white-space:nowrap;}
+  .rc-n{min-width:28px;text-align:center;font-size:11px;font-weight:700;color:var(--primary-dark);background:var(--primary-soft);border-radius:999px;padding:1px 8px;}
   .gl-item{aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--surface-2);cursor:pointer;border:1px solid var(--border-soft);transition:border-color .12s ease;}
   .gl-item:hover{border-color:var(--primary);}
   .gl-item img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -1959,6 +1972,24 @@
         <div id="lastMonthStatsRow"></div>
       </div>
 
+      <!-- 5. Treatment statistics (all time) -->
+      <div class="card-type-stats-panel rpt-all-panel" style="margin-top: 15px;">
+        <div class="card-type-stats-head">
+          <h4 class="kh">ស្ថិតិ Treatment សរុប · Treatment Statistics <small style="font-weight:500;color:var(--ink-dim);">(ចុចលើ Card ដើម្បីមើលឈ្មោះអ្នកជំងឺ)</small></h4>
+          <span class="count-pill mono" id="rptTreatTotal">0</span>
+        </div>
+        <div class="card-type-stats-grid" id="rptTreatRow"></div>
+      </div>
+
+      <!-- 6. Diagnosis (Indication) statistics (all time) -->
+      <div class="card-type-stats-panel rpt-all-panel" style="margin-top: 15px;">
+        <div class="card-type-stats-head">
+          <h4 class="kh">ស្ថិតិ Diagnosis (Indication) សរុប · Diagnosis Statistics <small style="font-weight:500;color:var(--ink-dim);">(ចុចលើ Card ដើម្បីមើលឈ្មោះអ្នកជំងឺ)</small></h4>
+          <span class="count-pill mono" id="rptDiagTotal">0</span>
+        </div>
+        <div class="card-type-stats-grid" id="rptDiagRow"></div>
+      </div>
+
 
     </div> <!-- នេះគឺបិទ modal-body -->
   </div> <!-- ថែម </div> ទី១ នៅទីនេះ ដើម្បីបិទ .modal -->
@@ -2381,6 +2412,14 @@
     <button type="button" class="cv-btn danger" id="certDelete">🗑 លុបរូបនេះ</button>
     <div class="cv-url"><input type="text" id="cert_url" autocomplete="off" placeholder="ឬបិទភ្ជាប់តំណ Google Drive (រូបច្បាស់ជាង)"><button type="button" class="cv-btn" id="certUrlApply">✓</button></div>
     <div class="cv-msg" id="certMsg"></div>
+  </div>
+</div>
+
+<!-- Report card → patient list -->
+<div class="overlay hidden" id="rcListOverlay">
+  <div class="modal narrow" style="max-width:560px;">
+    <div class="modal-head"><h2 class="kh" id="rcListTitle"></h2><button class="x" id="closeRcList" aria-label="បិទ">✕</button></div>
+    <div class="modal-body"><div id="rcListBody"></div></div>
   </div>
 </div>
 
@@ -4586,7 +4625,111 @@ function renderAppointments(){
   applyListRowLimits();
 }
 
+/* ===== Report cards: click a card → list of the patients behind its number ===== */
+function rcScopeRecords(scope){
+  const key = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  const dt = r => parseAnyDate(r.doingDateTime || r.timestamp);
+  const now = new Date();
+  if(scope === 'all') return allRecords.filter(r => cleanStr(r.name));
+  if(scope === 'cm' || scope === 'lm'){
+    let k;
+    if(scope === 'cm') k = key(now);
+    else { let y = now.getFullYear(), m = now.getMonth(); if(m === 0){ m = 12; y--; } k = y + '-' + String(m).padStart(2, '0'); }
+    return allRecords.filter(r => { const d = dt(r); return d && key(d) === k; });
+  }
+  if(scope.indexOf('f:') === 0){
+    const parts = scope.split(':'), mo = parts[1], yr = parts[2];
+    return allRecords.filter(r => {
+      const d = dt(r); if(!d) return false;
+      if(mo && (d.getMonth() + 1) !== parseInt(mo, 10)) return false;
+      if(yr && d.getFullYear() !== parseInt(yr, 10)) return false;
+      return true;
+    });
+  }
+  return [];
+}
+function rcPatients(scope, recs){
+  const m = new Map();
+  if(scope === 'all'){
+    recs.forEach(r => { const k = patientKey(r), ex = m.get(k); if(!ex || (parseAnyDate(r.timestamp) || 0) > (parseAnyDate(ex.timestamp) || 0)) m.set(k, r); });
+  } else recs.forEach(r => m.set(patientKey(r), r));
+  return m;
+}
+function openReportCardList(spec, cardEl){
+  const parts = String(spec).split('|'), scope = parts[0], kind = parts[1], val = parts[2] ? decodeURIComponent(parts[2]) : '';
+  const recs = rcScopeRecords(scope), pats = rcPatients(scope, recs);
+  const visits = new Map(); recs.forEach(r => { const k = patientKey(r); visits.set(k, (visits.get(k) || 0) + 1); });
+  const sexOf = p => { const sx = String(p.sex || '').toUpperCase(); return { fem: sx === 'F' || sx.includes('ស្រី'), mal: sx === 'M' || sx.includes('ប្រុស') }; };
+  const isKid = p => { const a = parseInt(p.age, 10); return !isNaN(a) && a <= 15; };
+  let list = [];   // {rec, n}
+  const fromPats = (test) => { pats.forEach((p, k) => { if(test(p)) list.push({ rec: p, n: visits.get(k) || 1 }); }); };
+  if(kind === 'total') fromPats(() => true);
+  else if(kind === 'female') fromPats(p => !sexOf(p).mal);
+  else if(kind === 'male') fromPats(p => sexOf(p).mal);
+  else if(kind === 'kids') fromPats(p => isKid(p));
+  else if(kind === 'girls') fromPats(p => isKid(p) && sexOf(p).fem);
+  else {
+    const per = new Map();
+    recs.forEach(r => {
+      let n = 0;
+      if(kind === 'case') n = Math.max(1, recordTreatments(r).length);
+      else if(kind === 'treat') n = recordTreatments(r).filter(t => t === val).length;
+      else if(kind === 'diag') n = (cleanStr(r.diagnosis) === val) ? 1 : 0;
+      else if(kind === 'type') n = ((cleanStr(r.type) || 'បង់ពេញថ្លៃ') === val) ? 1 : 0;
+      if(!n) return;
+      const k = patientKey(r), ex = per.get(k);
+      per.set(k, { rec: pats.get(k) || r, n: (ex ? ex.n : 0) + n });
+    });
+    list = Array.from(per.values());
+  }
+  list.sort((a, b) => String(a.rec.name || '').localeCompare(String(b.rec.name || '')));
+  const label = ((cardEl && cardEl.querySelector('.type-stat-name')) ? cardEl.querySelector('.type-stat-name').textContent : '').trim();
+  document.getElementById('rcListTitle').textContent = (label || 'Patients') + ' · ' + list.length;
+  document.getElementById('rcListBody').innerHTML = list.length ? list.map((it, i) => {
+    const p = it.rec, nm = cleanStr(p.name);
+    const sub = [p.sex, (p.age !== undefined && p.age !== '' && p.age !== null) ? p.age + ' \u1786\u17d2\u1793\u17b6\u17c6' : ''].filter(Boolean).join(' \u00b7 ');
+    return `<button type="button" class="rc-row kh" ${nm ? 'data-name="' + esc(encodeURIComponent(nm)) + '"' : 'disabled'}><span class="rc-no mono">${i + 1}</span><span class="rc-name">${esc(nm) || '(\u1782\u17d2\u1798\u17b6\u1793\u1788\u17d2\u1798\u17c4\u17c7)'}</span><span class="rc-sub mono">${esc(sub)}</span><span class="rc-n mono">${it.n}</span></button>`;
+  }).join('') : '<div class="empty-state kh" style="border:none;">No patients</div>';
+  document.getElementById('rcListOverlay').classList.remove('hidden');
+}
+function closeReportCardList(){ document.getElementById('rcListOverlay').classList.add('hidden'); }
+(function(){
+  document.addEventListener('click', e => {
+    const c = e.target.closest('[data-rc]');
+    if(c){ openReportCardList(c.dataset.rc, c); return; }
+    const ov = document.getElementById('rcListOverlay');
+    if(!ov || ov.classList.contains('hidden')) return;
+    if(e.target === ov || e.target.closest('#closeRcList')){ closeReportCardList(); return; }
+    const row = e.target.closest('.rc-row[data-name]');
+    if(row){ const nm = decodeURIComponent(row.dataset.name); closeReportCardList(); openPatientRecord(nm); }
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ const ov = document.getElementById('rcListOverlay'); if(ov && !ov.classList.contains('hidden')) closeReportCardList(); }
+    if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.matches && e.target.matches('[data-rc]')){ e.preventDefault(); openReportCardList(e.target.dataset.rc, e.target); }
+  });
+})();
+
+function renderReportAllStats(){
+  const tc = {}, dc = {};
+  allRecords.forEach(r => {
+    if(!cleanStr(r.name)) return;
+    recordTreatments(r).forEach(t => { tc[t] = (tc[t] || 0) + 1; });
+    const d = cleanStr(r.diagnosis);
+    if(d && d !== 'custom') dc[d] = (dc[d] || 0) + 1;
+  });
+  const build = (counts, kind, hostId, totId, cls) => {
+    const host = document.getElementById(hostId); if(!host) return;
+    const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+    const te = document.getElementById(totId); if(te) te.textContent = keys.reduce((n, k) => n + counts[k], 0);
+    host.innerHTML = keys.length ? keys.map(k => `<div data-rc="all|${kind}|${encodeURIComponent(k)}" tabindex="0" role="button" class="type-stat-card ${cls}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(k)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${counts[k]}</div></div>`).join('')
+      : '<div class="dash-empty kh" style="grid-column:1/-1;">គ្មានទិន្នន័យ (No data)</div>';
+  };
+  build(tc, 'treat', 'rptTreatRow', 'rptTreatTotal', 'type-default');
+  build(dc, 'diag', 'rptDiagRow', 'rptDiagTotal', 'type-blue');
+}
+
 function renderPatientDemographics(){
+  try{ renderReportAllStats(); }catch(e){}
   const patientRows = allRecords.filter(r=>cleanStr(r.name));
   const latestByPatient = new Map();
   patientRows.forEach(r=>{
@@ -4622,12 +4765,12 @@ function renderPatientDemographics(){
   }
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
-  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
-  html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
+  html += `<div data-rc="all|total" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
+  html += `<div data-rc="all|case" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div data-rc="all|female" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
+  html += `<div data-rc="all|male" tabindex="0" role="button" class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
+  html += `<div data-rc="all|kids" tabindex="0" role="button" class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
+  html += `<div data-rc="all|girls" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
   html += `</div>`;
   
   row.innerHTML = html;
@@ -4680,12 +4823,12 @@ function renderThisMonthStats(){
   const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
-  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
-  html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
+  html += `<div data-rc="cm|total" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
+  html += `<div data-rc="cm|case" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div data-rc="cm|female" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
+  html += `<div data-rc="cm|male" tabindex="0" role="button" class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
+  html += `<div data-rc="cm|kids" tabindex="0" role="button" class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
+  html += `<div data-rc="cm|girls" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
   html += `</div>`;
   
   if (sortedTreatments.length > 0 || sortedCards.length > 0) {
@@ -4693,7 +4836,7 @@ function renderThisMonthStats(){
       html += `<div class="card-type-stats-grid" style="gap:10px;">`;
       
       sortedTreatments.forEach(t => {
-          html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
+          html += `<div data-rc="cm|treat|${encodeURIComponent(t)}" tabindex="0" role="button" class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
       });
 
       if(sortedTreatments.length > 0 && sortedCards.length > 0) {
@@ -4701,7 +4844,7 @@ function renderThisMonthStats(){
       }
 
       sortedCards.forEach(c => {
-          html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
+          html += `<div data-rc="cm|type|${encodeURIComponent(c)}" tabindex="0" role="button" class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
       });
       html += `</div>`;
   }
@@ -4763,12 +4906,12 @@ function renderLastMonthStats(){
   const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
 
   let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-  html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
-  html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
-  html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
-  html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
+  html += `<div data-rc="lm|total" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
+  html += `<div data-rc="lm|case" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+  html += `<div data-rc="lm|female" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${tFemale}</div></div>`;
+  html += `<div data-rc="lm|male" tabindex="0" role="button" class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${tMale}</div></div>`;
+  html += `<div data-rc="lm|kids" tabindex="0" role="button" class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${tKids}</div></div>`;
+  html += `<div data-rc="lm|girls" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${tGirls}</div></div>`;
   html += `</div>`;
   
   if (sortedTreatments.length > 0 || sortedCards.length > 0) {
@@ -4776,7 +4919,7 @@ function renderLastMonthStats(){
       html += `<div class="card-type-stats-grid" style="gap:10px;">`;
       
       sortedTreatments.forEach(t => {
-          html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
+          html += `<div data-rc="lm|treat|${encodeURIComponent(t)}" tabindex="0" role="button" class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
       });
 
       if(sortedTreatments.length > 0 && sortedCards.length > 0) {
@@ -4784,7 +4927,7 @@ function renderLastMonthStats(){
       }
 
       sortedCards.forEach(c => {
-          html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
+          html += `<div data-rc="lm|type|${encodeURIComponent(c)}" tabindex="0" role="button" class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
       });
       html += `</div>`;
   }
@@ -7788,6 +7931,7 @@ function applyReportFilter() {
     const month = document.getElementById('reportFilterMonth').value;
     const year = document.getElementById('reportFilterYear').value;
     
+    document.querySelectorAll('.rpt-all-panel').forEach(p => { p.style.display = (month || year) ? 'none' : 'block'; });
     const filteredPanel = document.getElementById('filteredStatsPanel');
     const demoPanel = document.getElementById('demoStatsRow').closest('.card-type-stats-panel');
     const thisMonthPanel = document.getElementById('thisMonthStatsRow').closest('.card-type-stats-panel');
@@ -7849,12 +7993,12 @@ function applyReportFilter() {
         const sortedCards = Object.keys(cardCounts).sort((a,b) => cardCounts[b] - cardCounts[a]);
 
         let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; width: 100%;">`;
-        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
-        html += `<div class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
-        html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
-        html += `<div class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
-        html += `<div class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${kids}</div></div>`;
-        html += `<div class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${girls}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|total" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបជំងឺ (Total)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tTotalPatients}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|case" tabindex="0" role="button" class="type-stat-card" style="background:var(--primary-softer); border-color:var(--primary);"><span class="type-stat-name kh" style="color:var(--primary-dark);">សរុបករណី (Case)</span><div class="type-stat-count" style="color:var(--primary-dark); font-size:22px;">${tCases}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|female" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ស្រី (Female)</span><div class="type-stat-count" style="font-size:20px;">${female}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|male" tabindex="0" role="button" class="type-stat-card type-blue"><span class="type-stat-name kh">ប្រុស (Male)</span><div class="type-stat-count" style="font-size:20px;">${male}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|kids" tabindex="0" role="button" class="type-stat-card type-yellow"><span class="type-stat-name kh">ក្មេង (ស្មើឬក្រោម១៥)</span><div class="type-stat-count" style="font-size:20px;">${kids}</div></div>`;
+        html += `<div data-rc="f:${month}:${year}|girls" tabindex="0" role="button" class="type-stat-card type-red"><span class="type-stat-name kh">ក្មេងស្រី</span><div class="type-stat-count" style="font-size:20px;">${girls}</div></div>`;
         html += `</div>`;
         
         if (sortedTreatments.length > 0 || sortedCards.length > 0) {
@@ -7862,7 +8006,7 @@ function applyReportFilter() {
             html += `<div class="card-type-stats-grid" style="gap:10px;">`;
             
             sortedTreatments.forEach(t => {
-                html += `<div class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
+                html += `<div data-rc="f:${month}:${year}|treat|${encodeURIComponent(t)}" tabindex="0" role="button" class="type-stat-card type-default" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${t}</span><div class="type-stat-count" style="color:var(--primary-dark);">${treatCounts[t]}</div></div>`;
             });
 
             if(sortedTreatments.length > 0 && sortedCards.length > 0) {
@@ -7870,7 +8014,7 @@ function applyReportFilter() {
             }
 
             sortedCards.forEach(c => {
-                html += `<div class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
+                html += `<div data-rc="f:${month}:${year}|type|${encodeURIComponent(c)}" tabindex="0" role="button" class="type-stat-card ${getCardTypeBadgeClass(c)}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${c}</span><div class="type-stat-count">${cardCounts[c]}</div></div>`;
             });
             html += `</div>`;
         }
