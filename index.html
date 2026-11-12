@@ -1653,6 +1653,34 @@
   .rx-row .med-input, .dd-step-editbox input, .dd-step-editbox select{font-size:16px;}
 }
 </style>
+<style id="schCardFixStyle">
+/* ===== Dashboard · Schedule cards (Appointments / ការព្យាបាល · Procedures): fit inside the panel, never overflow ===== */
+.appt-panel{min-width:0;overflow:hidden;}
+.appt-panel .dash-scroll{overflow-x:hidden;}
+body .appt-row.sch-card{display:block !important;grid-template-columns:none !important;grid-template-areas:none !important;
+  width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden;
+  padding:6px 10px 6px 10px !important;margin:0 0 6px 0;gap:0 !important;
+  background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--primary);border-radius:8px;box-shadow:none;}
+body .appt-row.sch-card:last-child{margin-bottom:0;}
+body .appt-row.sch-card:hover{background:var(--primary-softer);}
+/* both lines wrap instead of running past the card edge */
+.sch-card .sch-l1,.sch-card .sch-l2{display:flex;flex-wrap:wrap;align-items:center;column-gap:5px;row-gap:2px;min-width:0;max-width:100%;white-space:normal;}
+.sch-card .sch-l2{margin-top:3px;}
+/* centre everything inside the card */
+body .appt-row.sch-card{text-align:center;}
+.sch-card .sch-l1,.sch-card .sch-l2{justify-content:center;text-align:center;}
+.sch-card .sch-name,.sch-card .sch-tr,.sch-card .sch-proc,.sch-card .sch-note{text-align:center;}
+.sch-card .sch-name{flex:0 1 auto;min-width:0;max-width:100%;font-size:12px;font-weight:700;line-height:1.7;color:var(--ink);overflow-wrap:anywhere;word-break:break-word;}
+.sch-card .sch-when{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;line-height:1.7;color:var(--primary-dark);white-space:nowrap;}
+.sch-card .sch-when .mono{font-size:10px;font-weight:600;color:var(--primary-dark);}
+.sch-card .sch-when .appt-daytag{margin:0;font-size:9px;padding:0 5px;line-height:1.6;}
+.sch-card .sch-sep{flex:0 0 auto;color:var(--ink-dim);font-size:10px;line-height:1.7;}
+.sch-card .sch-tr,.sch-card .sch-proc,.sch-card .sch-note{flex:0 1 auto;min-width:0;max-width:100%;font-size:11px;line-height:1.7;overflow:visible;text-overflow:clip;white-space:normal;overflow-wrap:anywhere;word-break:break-word;}
+.sch-card .sch-tr{font-weight:600;color:var(--ink);}
+.sch-card .sch-proc{color:var(--ink-soft);}
+.sch-card .sch-note{color:var(--ink-dim);}
+.sch-card .sch-st{flex:0 0 auto;max-width:100% !important;font-size:9.5px;font-weight:800;line-height:1.6;padding:1px 8px;border-radius:999px;white-space:nowrap !important;overflow:hidden;text-overflow:ellipsis;}
+</style>
 <style id="dynamicPageStyle">@page{ size: A4 portrait; margin: 15mm; }</style>
 </head>
 <body>
@@ -4603,6 +4631,39 @@ function renderProcRow(item){
     </div>`;
 }
 
+/* Dashboard Schedule card — 2 small lines:
+   1) patient name - [day] time · date      2) Treatment - Procedure - Note - Status */
+function dashWhenInline(d){
+  const m = dashDayLabel(d).match(/<span class="appt-daytag[^>]*>.*?<\/span>/);
+  const ds = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  return `${m ? m[0] : ''}<span class="mono">${dashTimeStr(d)} · ${ds}</span>`;
+}
+function renderSchRow(item, kind){
+  const r = item.r, d = item.d, st = item.status;
+  const tr = cleanStr(r.treatment);
+  let proc = '', note = '';
+  if(kind === 'proc'){
+    const sn = cleanStr(item.stepName), dg = cleanStr(r.doing);
+    proc = (sn && (!st || sn !== st.label)) ? sn : dg;
+    note = cleanStr(item.stepNote);
+  } else {
+    proc = cleanStr(r.planDo);
+    note = cleanStr(item.note);
+    if(note === proc) note = '';
+  }
+  const seg = [];
+  if(tr)   seg.push(`<span class="sch-tr kh">${esc(tr)}</span>`);
+  if(proc) seg.push(`<span class="sch-proc kh">${esc(proc)}</span>`);
+  if(note) seg.push(`<span class="sch-note kh">${esc(note)}</span>`);
+  if(st)   seg.push(`<span class="sch-st kh" style="${scheduleBadgeStyle(item, '')}max-width:90px;white-space:nowrap;" title="Status: ${esc(st.label)}">${esc(st.label)}</span>`);
+  const l2 = seg.length ? seg.join('<span class="sch-sep">-</span>') : '<span style="opacity:.5">—</span>';
+  return `
+    <div class="appt-row sch-card" data-name="${encodeURIComponent(r.name)}" title="${esc([cleanStr(r.name), tr, proc, note, st ? st.label : ''].filter(Boolean).join(' - '))}">
+      <div class="sch-l1"><span class="sch-name kh">${esc(cleanStr(r.name))}</span><span class="sch-sep">-</span><span class="sch-when">${dashWhenInline(d)}</span></div>
+      <div class="sch-l2">${l2}</div>
+    </div>`;
+}
+
 function renderAppointments(){
   const {todayList, todayProcList} = getAppointments();
   
@@ -4613,11 +4674,11 @@ function renderAppointments(){
   const procBody = document.getElementById('procTodayBody');
   
   todayBody.innerHTML = todayList.length
-    ? todayList.map(it => renderApptRow(it, true)).join('')
+    ? todayList.map(it => renderSchRow(it, 'appt')).join('')
     : `<div class="empty-state kh" style="padding:20px;font-size:12px;">មិនមានការណាត់ជួបក្នុងចន្លោះ ៣ ថ្ងៃនេះទេ<br><span style="opacity:.7">No appointments (yesterday - tomorrow)</span></div>`;
     
   procBody.innerHTML = todayProcList.length
-    ? todayProcList.map(renderProcRow).join('')
+    ? todayProcList.map(it => renderSchRow(it, 'proc')).join('')
     : `<div class="empty-state kh" style="padding:20px;font-size:12px;">មិនមានការព្យាបាលក្នុងចន្លោះ ៣ ថ្ងៃនេះទេ<br><span style="opacity:.7">No procedures (yesterday - tomorrow)</span></div>`;
     
   document.querySelectorAll('.appt-row').forEach(el=>{
@@ -11338,6 +11399,22 @@ const EXAM_FORM_HTML = `<!DOCTYPE html>
   .btn-primary{background:linear-gradient(135deg,#1F66D6 0%,#1C86C8 62%,#22B573 135%);}
   .btn-primary:hover{filter:brightness(1.06);}
   .sidebar{border-right:1px solid rgba(74,222,128,.25);}
+
+  /* ===== Dashboard Schedule: compact 2-line cards ===== */
+  .appt-row.sch-card{display:block;padding:5px 9px 5px 10px;margin-bottom:5px;gap:0;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--primary);box-shadow:none;}
+  .appt-row.sch-card:hover{background:var(--primary-softer);}
+  .sch-l1,.sch-l2{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap;}
+  .sch-l2{margin-top:2px;}
+  .sch-name{flex:0 1 auto;min-width:0;font-size:11.5px;font-weight:700;line-height:1.35;color:var(--ink);overflow:hidden;text-overflow:ellipsis;}
+  .sch-when{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--primary-dark);}
+  .sch-when .mono{font-size:10px;font-weight:600;color:var(--primary-dark);}
+  .sch-when .appt-daytag{margin:0;font-size:9px;padding:0 5px;line-height:1.5;}
+  .sch-sep{flex:none;color:var(--ink-dim);font-size:10px;}
+  .sch-tr,.sch-proc,.sch-note{min-width:0;font-size:10.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;}
+  .sch-tr{flex:0 1 auto;max-width:34%;font-weight:600;color:var(--ink);}
+  .sch-proc{flex:1 1 0;color:var(--ink-soft);}
+  .sch-note{flex:0 1 auto;max-width:32%;color:var(--ink-dim);}
+  .sch-st{flex:none;font-size:9px;font-weight:800;line-height:1.5;padding:0 7px;border-radius:999px;overflow:hidden;text-overflow:ellipsis;}
 </style>
 </head>
 <body>
