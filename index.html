@@ -1653,6 +1653,40 @@
   .rx-row .med-input, .dd-step-editbox input, .dd-step-editbox select{font-size:16px;}
 }
 </style>
+<script>try{if(localStorage.getItem("dental_theme")==="dark")document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
+<style id="darkModeStyle">
+html[data-theme="dark"]{color-scheme:dark;
+  --bg:#0A141D; --surface:#111F2C; --surface-2:#0E1A25;
+  --border:#264255; --border-soft:#1B3041;
+  --ink:#E6F1F8; --ink-soft:#A9C3D3; --ink-dim:#7E98AA;
+  --primary:#14B8A6; --primary-strong:#0FA595; --primary-dark:#5EEAD4; --primary-soft:#0F3B3B; --primary-softer:#0C2C30;
+  --accent:#4ADE80; --accent-strong:#22C55E; --accent-dark:#86EFAC; --accent-soft:#12361F; --accent-softer:#0F2A1A;
+  --amber:#E8A33D; --amber-soft:#3A2C12; --amber-dark:#F2C87C;
+  --coral:#F0685D; --coral-soft:#3E1B19; --coral-dark:#FF9D94;
+  --shadow:0 12px 30px -16px rgba(0,0,0,.7); --shadow-sm:0 4px 14px -8px rgba(0,0,0,.6);}
+html[data-theme="dark"] body{background:var(--bg);color:var(--ink);}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:var(--surface-2);color:var(--ink);border-color:var(--border);}
+html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:var(--ink-dim);}
+html[data-theme="dark"] select option,html[data-theme="dark"] select optgroup option{background:var(--surface);color:var(--ink);}
+html[data-theme="dark"] .search-input-topbar,
+html[data-theme="dark"] .emr-header-panel,html[data-theme="dark"] .emr-chart-section,html[data-theme="dark"] .emr-notes-section,html[data-theme="dark"] .emr-table th,
+html[data-theme="dark"] .rx-row .med-input,html[data-theme="dark"] .rx-card .q-pill,html[data-theme="dark"] .med-bar,html[data-theme="dark"] .med-table,
+html[data-theme="dark"] .opt-row,html[data-theme="dark"] .doc-list,html[data-theme="dark"] .inv-group-n,html[data-theme="dark"] .cv-btn.on{background:var(--surface);color:var(--ink);}
+html[data-theme="dark"] .print-sheet,html[data-theme="dark"] #printArea{background:#fff;color:#14243F;}
+html[data-theme="dark"] .btn-outline{background:transparent;color:var(--ink);border-color:var(--border);}
+#themeToggleBtn{width:34px;padding:0;flex:none;background:var(--surface);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+#themeToggleBtn:hover{background:var(--primary-softer);color:var(--primary-dark);}
+</style>
+<style id="rcEditStyle">
+#editRcList[hidden]{display:none !important;}
+#editRcList{white-space:nowrap;}
+.rc-edit-hint{font-size:11.5px;color:var(--ink-dim);padding:2px 4px 10px;line-height:1.6;}
+.rc-edit-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border-soft);}
+.rc-edit-row .rc-name{flex:1 1 0;min-width:0;overflow-wrap:anywhere;}
+.rc-bulk{display:flex;flex-direction:column;gap:8px;padding:4px 4px 12px;margin-bottom:6px;border-bottom:1px solid var(--border-soft);}
+.rc-bulk select.rc-dx{width:100%;max-width:100%;font-size:12.5px;padding:7px 10px;}
+.rc-bulk .btn{align-self:flex-end;}
+</style>
 <style id="schCardFixStyle">
 /* ===== Dashboard · Schedule cards (Appointments / ការព្យាបាល · Procedures): fit inside the panel, never overflow ===== */
 .appt-panel{min-width:0;overflow:hidden;}
@@ -1808,6 +1842,7 @@ body .appt-row.sch-card{text-align:center;}
             <input type="text" class="search-input search-input-topbar kh" id="searchInput" placeholder="ស្វែងរក ឈ្មោះ, លេខធ្មេញ..." aria-label="ស្វែងរកអ្នកជំងឺ">
           </div>
           <button type="button" class="topbar-btn-uniform btn-add kh" id="fabAdd">＋ កត់ត្រាថ្មី</button>
+          <button type="button" class="topbar-btn-uniform" id="themeToggleBtn" title="Night mode / Day mode" aria-label="Night mode / Day mode"><svg id="themeToggleIco" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
         </div>
       </div>
     </header>
@@ -2447,7 +2482,7 @@ body .appt-row.sch-card{text-align:center;}
 <!-- Report card → patient list -->
 <div class="overlay hidden" id="rcListOverlay">
   <div class="modal narrow" style="max-width:560px;">
-    <div class="modal-head"><h2 class="kh" id="rcListTitle"></h2><button class="x" id="closeRcList" aria-label="បិទ">✕</button></div>
+    <div class="modal-head"><h2 class="kh" id="rcListTitle"></h2><div style="display:flex;align-items:center;gap:8px;flex:none;"><button type="button" class="btn btn-outline btn-sm kh" id="editRcList" hidden title="កែ Diagnosis (ត្រូវការ PIN)">✏️ កែ</button><button class="x" id="closeRcList" aria-label="បិទ">✕</button></div></div>
     <div class="modal-body"><div id="rcListBody"></div></div>
   </div>
 </div>
@@ -4717,7 +4752,7 @@ function rcPatients(scope, recs){
   } else recs.forEach(r => m.set(patientKey(r), r));
   return m;
 }
-function openReportCardList(spec, cardEl){
+function openReportCardList(spec, cardEl, labelOverride){
   const parts = String(spec).split('|'), scope = parts[0], kind = parts[1], val = parts[2] ? decodeURIComponent(parts[2]) : '';
   const recs = rcScopeRecords(scope), pats = rcPatients(scope, recs);
   const visits = new Map(); recs.forEach(r => { const k = patientKey(r); visits.set(k, (visits.get(k) || 0) + 1); });
@@ -4745,13 +4780,16 @@ function openReportCardList(spec, cardEl){
     list = Array.from(per.values());
   }
   list.sort((a, b) => String(a.rec.name || '').localeCompare(String(b.rec.name || '')));
-  const label = ((cardEl && cardEl.querySelector('.type-stat-name')) ? cardEl.querySelector('.type-stat-name').textContent : '').trim();
+  const label = (labelOverride || ((cardEl && cardEl.querySelector('.type-stat-name')) ? cardEl.querySelector('.type-stat-name').textContent : '')).trim();
   document.getElementById('rcListTitle').textContent = (label || 'Patients') + ' · ' + list.length;
   document.getElementById('rcListBody').innerHTML = list.length ? list.map((it, i) => {
     const p = it.rec, nm = cleanStr(p.name);
     const sub = [p.sex, (p.age !== undefined && p.age !== '' && p.age !== null) ? p.age + ' \u1786\u17d2\u1793\u17b6\u17c6' : ''].filter(Boolean).join(' \u00b7 ');
     return `<button type="button" class="rc-row kh" ${nm ? 'data-name="' + esc(encodeURIComponent(nm)) + '"' : 'disabled'}><span class="rc-no mono">${i + 1}</span><span class="rc-name">${esc(nm) || '(\u1782\u17d2\u1798\u17b6\u1793\u1788\u17d2\u1798\u17c4\u17c7)'}</span><span class="rc-sub mono">${esc(sub)}</span><span class="rc-n mono">${it.n}</span></button>`;
   }).join('') : '<div class="empty-state kh" style="border:none;">No patients</div>';
+  window._rcCtx = { spec, scope, kind, val, label: label || val, editing: false };
+  const eb = document.getElementById('editRcList');
+  if(eb){ eb.hidden = !(kind === 'diag' && val); eb.textContent = '✏️ កែ'; }
   document.getElementById('rcListOverlay').classList.remove('hidden');
 }
 function closeReportCardList(){ document.getElementById('rcListOverlay').classList.add('hidden'); }
@@ -4769,6 +4807,71 @@ function closeReportCardList(){ document.getElementById('rcListOverlay').classLi
     if(e.key === 'Escape'){ const ov = document.getElementById('rcListOverlay'); if(ov && !ov.classList.contains('hidden')) closeReportCardList(); }
     if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.matches && e.target.matches('[data-rc]')){ e.preventDefault(); openReportCardList(e.target.dataset.rc, e.target); }
   });
+})();
+
+/* ===== Diagnosis statistics list: ✏️ កែ (PIN) — move patients to another Diagnosis picked from the Diagnosis (Indication) list ===== */
+function rcEditToggle(){
+  const c = window._rcCtx; if(!c || c.kind !== 'diag' || !c.val) return;
+  if(c.editing){ c.editing = false; openReportCardList(c.spec, null, c.label); return; }
+  promptForPin('🔒 បញ្ចូលលេខ PIN ដើម្បីកែ Diagnosis', () => { c.editing = true; rcRenderEdit(); });
+}
+function rcEditGroup(){
+  const c = window._rcCtx;
+  return rcScopeRecords(c.scope).filter(r => cleanStr(r.name) && cleanStr(r.diagnosis) === c.val);
+}
+function rcRenderEdit(){
+  const c = window._rcCtx; if(!c) return;
+  const recs = rcEditGroup();
+  const names = Array.from(new Set(recs.map(r => cleanStr(r.name)))).sort((x, y) => x.localeCompare(y));
+  document.getElementById('rcListTitle').textContent = c.label + ' · ' + names.length;
+  const eb = document.getElementById('editRcList'); if(eb) eb.textContent = '✓ រួចរាល់';
+  document.getElementById('rcListBody').innerHTML =
+    `<div class="rc-bulk kh">
+       <div class="rc-edit-hint">កែជារួម៖ ប្តូរ Diagnosis «<b>${esc(c.val)}</b>» របស់ <b>${names.length}</b> នាក់ (${recs.length} record) ទៅ Diagnosis ថ្មី ដែលជ្រើសពីបញ្ជី Diagnosis (Indication)</div>
+       <select id="rcBulkSel" class="rc-dx kh"><option value="">— ជ្រើស Diagnosis ថ្មី —</option>${optionsHtml('diagnosis')}</select>
+       <button type="button" class="btn btn-primary btn-sm kh" id="rcBulkApply" disabled>✓ អនុវត្តទាំងអស់</button>
+     </div>` +
+    (names.length ? names.map((nm, i) => `<div class="rc-edit-row kh"><span class="rc-no mono">${i + 1}</span><span class="rc-name">${esc(nm)}</span></div>`).join('')
+                  : '<div class="empty-state kh" style="border:none;">No patients</div>');
+}
+function rcApplyDiagBulk(newVal){
+  const c = window._rcCtx; if(!c || !newVal || newVal === c.val) return;
+  const recs = rcEditGroup(); if(!recs.length) return;
+  if(!confirm('ប្តូរ Diagnosis ' + recs.length + ' record\n\nពី៖ ' + c.val + '\nទៅ៖ ' + newVal + '\n\nបន្តឬទេ?')) return;
+  recs.forEach(r => { r.diagnosis = newVal; pushToSheet('updateRecord', { ...r }); });
+  saveLocalRecords();
+  renderAll();
+  closeReportCardList();
+  try{ flashAutoSaved(); }catch(e){}
+}
+(function(){
+  document.addEventListener('click', e => {
+    if(e.target.closest('#editRcList')) rcEditToggle();
+    else if(e.target.closest('#rcBulkApply')){ const sel = document.getElementById('rcBulkSel'); if(sel) rcApplyDiagBulk(sel.value); }
+  });
+  document.addEventListener('change', e => {
+    if(e.target && e.target.id === 'rcBulkSel'){ const b = document.getElementById('rcBulkApply'); if(b) b.disabled = !e.target.value; }
+  });
+})();
+
+/* ===== Night mode toggle (remembered on this device) ===== */
+(function(){
+  const MOON = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  const SUN  = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  function paint(){
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const ico = document.getElementById('themeToggleIco');
+    if(ico) ico.innerHTML = dark ? SUN : MOON;
+    const tb = document.getElementById('themeToggleBtn'); if(tb) tb.title = dark ? 'Day mode' : 'Night mode';
+  }
+  function toggle(){
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if(dark) document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', 'dark');
+    try{ localStorage.setItem('dental_theme', dark ? 'light' : 'dark'); }catch(e){}
+    paint();
+  }
+  document.addEventListener('click', e => { if(e.target.closest('#themeToggleBtn')) toggle(); });
+  paint();
 })();
 
 function renderReportAllStats(){
