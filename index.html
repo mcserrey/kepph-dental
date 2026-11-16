@@ -1688,6 +1688,42 @@ html[data-theme="dark"] .dash-hero .btn-primary{background:#E6F1F8;color:#0B2F63
 #themeToggleBtn{width:34px;padding:0;flex:none;background:var(--surface);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
 #themeToggleBtn:hover{background:var(--primary-softer);color:var(--primary-dark);}
 </style>
+<style id="enRedStyle">
+.en-red{color:#D92D20;font-weight:800;}
+html[data-theme="dark"] .en-red{color:#FF6B61;}
+.tr-step-count{margin-top:2px;font-size:11px;font-weight:600;color:var(--primary-dark);line-height:1.5;}
+</style>
+<style id="dxCardStyle">
+.type-stat-name.dx-name{flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;width:100%;}
+.type-stat-name.dx-name .dx-en,.type-stat-name.dx-name .dx-kh{display:block;max-width:100%;overflow-wrap:anywhere;line-height:1.5;text-align:center;}
+.type-stat-name.dx-name .dx-kh{color:inherit;}
+.type-stat-name.dx-name .dx-en{min-height:1.5em;}
+.type-stat-card .type-stat-count{text-align:center;width:100%;}
+</style>
+<style id="clinicalNotesFitStyle">
+/* 📜 ប្រវត្តិព្យាបាល (Clinical Notes): table fills the whole width, every column centred */
+#patientOverlay .modal{max-width:min(1400px,96vw);width:100%;}
+.emr-notes-section{width:100%;}
+.emr-notes-section .emr-table-wrap{width:100%;overflow-x:visible;}
+.emr-notes-section .emr-table{width:100%;table-layout:fixed;}
+.emr-notes-section .emr-table th:nth-child(1){width:18%;}
+.emr-notes-section .emr-table th:nth-child(2){width:12%;}
+.emr-notes-section .emr-table th:nth-child(3){width:38%;}
+.emr-notes-section .emr-table th:nth-child(4){width:32%;}
+.emr-notes-section .emr-table th,.emr-notes-section .emr-table td{text-align:center !important;vertical-align:middle;overflow-wrap:anywhere;}
+.emr-notes-section .emr-table th{white-space:normal;line-height:1.5;}
+.emr-notes-section .emr-table td .tr-step-count{text-align:center;}
+.emr-notes-section .emr-status{max-width:100%;margin:0 auto;}
+@media (max-width:768px){
+  .emr-notes-section .emr-table th:nth-child(n){width:100%;}
+  .emr-notes-section .emr-table td{text-align:center !important;}
+  .emr-notes-section .emr-table td::before{text-align:center;}
+}
+</style>
+<style id="settingIconStyle">
+#settingsBtn .sb-ico{color:#F97316 !important;stroke:#F97316 !important;}
+#settingsBtn:hover .sb-ico,#settingsBtn.active .sb-ico{color:#FB923C !important;stroke:#FB923C !important;}
+</style>
 <style id="rcEditStyle">
 #editRcList[hidden]{display:none !important;}
 #editRcList{white-space:nowrap;}
@@ -1812,9 +1848,9 @@ body .appt-row.sch-card{text-align:center;}
           <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>
           <span class="sb-label kh">ឃ្លាំងសម្ភារៈ-ឯកសារ<small>Inventory &amp; Documents</small></span><span class="sb-badge warn" id="sbBadgeInv" hidden>0</span>
         </button>
-        <button type="button" class="sb-item" id="settingsBtn" title="ព័ត៌មានគ្លីនិក · Clinic settings">
+        <button type="button" class="sb-item" id="settingsBtn" title="ការកំណត់គ្រប់គ្រង · Setting">
           <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span class="sb-label kh">ព័ត៌មានគ្លីនិក<small>Clinic settings</small></span>
+          <span class="sb-label kh">ការកំណត់គ្រប់គ្រង<small>Setting</small></span>
         </button>
       </div>
     </nav>
@@ -2540,7 +2576,7 @@ body .appt-row.sch-card{text-align:center;}
     </div>
     <div class="modal-body" style="text-align: center; padding: 22px;">
       <p class="kh" style="font-size: 13px; color: var(--ink-dim); margin-bottom: 12px;">
-        សូមបញ្ចូល PIN ដើម្បីចូលទៅកាន់ ព័ត៌មានគ្លីនិក · Clinic Info
+        សូមបញ្ចូល PIN ដើម្បីចូលទៅកាន់ ការកំណត់គ្រប់គ្រង · Setting
       </p>
       <input type="password" id="clinicPinInput" class="mono" maxlength="8" placeholder="••••••" 
              style="text-align: center; font-size: 24px; letter-spacing: 6px; width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 10px; margin-bottom: 8px; outline:none;">
@@ -2939,7 +2975,7 @@ body .appt-row.sch-card{text-align:center;}
 <div class="overlay hidden" id="settingsOverlay">
   <div class="modal narrow">
     <div class="modal-head">
-      <h2 class="kh">ព័ត៌មានគ្លីនិក · Clinic Info</h2>
+      <h2 class="kh">ការកំណត់គ្រប់គ្រង · Setting</h2>
       <div style="display:flex; align-items:center; gap:8px;">
         <button class="btn btn-outline btn-sm kh" id="listsSettingBtn" title="កំណត់ជម្រើស Treatment, Diag, Proc, Cards" style="padding:4px 10px; font-size:11.5px; border-color:var(--primary); color:var(--primary-dark);">⚙️ Settings</button>
         <button class="x" id="closeSettings">✕</button>
@@ -4897,7 +4933,7 @@ function renderReportAllStats(){
     const host = document.getElementById(hostId); if(!host) return;
     const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
     const te = document.getElementById(totId); if(te) te.textContent = keys.reduce((n, k) => n + counts[k], 0);
-    host.innerHTML = keys.length ? keys.map(k => `<div data-rc="all|${kind}|${encodeURIComponent(k)}" tabindex="0" role="button" class="type-stat-card ${cls}" style="display:flex;flex-direction:column;justify-content:center;"><span class="type-stat-name kh" style="font-weight:600;font-size:10.5px;">${esc(k)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${counts[k]}</div></div>`).join('')
+    host.innerHTML = keys.length ? keys.map(k => `<div data-rc="all|${kind}|${encodeURIComponent(k)}" tabindex="0" role="button" class="type-stat-card ${cls}" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;"><span class="type-stat-name kh${kind === 'diag' ? ' dx-name' : ''}" style="font-weight:600;font-size:10.5px;">${kind === 'diag' ? dxNameHtml(k) : esc(k)}</span><div class="type-stat-count" style="color:var(--primary-dark);">${counts[k]}</div></div>`).join('')
       : '<div class="dash-empty kh" style="grid-column:1/-1;">គ្មានទិន្នន័យ (No data)</div>';
   };
   build(tc, 'treat', 'rptTreatRow', 'rptTreatTotal', 'type-default');
@@ -5528,9 +5564,9 @@ function renderList(){
       <div class="appt-main">
         <div class="appt-name kh" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
           ${p.latest.name} 
-          ${p.list.length > 1 ? `<span class="mono" style="font-size:10.5px;color:var(--ink-dim);font-weight:normal;">(${p.list.length} visits)</span>` : ''}
         </div>
         <div class="appt-meta">${phone} · <span class="kh">${sex}${age}</span></div>
+        <div class="appt-meta kh" style="font-size:10.5px;">${visitSummaryHTML(p.list)}</div>
       </div>
       <div class="appt-plan-badge patient-card-badge kh" style="${badgeStyle}">
         <div style="font-size:11.5px; font-weight:700;">💉 Tx: ${txStr}</div>
@@ -6185,6 +6221,35 @@ function genStepId(){ return 'ST' + Date.now().toString(36).toUpperCase() + Math
 
 const STATUS_CLASSES = { done: 'done', appt: 'doing', labo: 'labo', missing: 'missing', normal: 'normal' };
 
+function recStepCount(r){ return stepsArray(r).filter(st => stepKind(st.name) !== 'appt').length; }
+function visitSummaryHTML(records){
+  const cases = records.length, times = records.reduce((n, r) => n + recStepCount(r), 0);
+  return 'ចំនួនមកព្យាបាលសរុប: <b style="color:var(--primary-dark);">' + cases + ' ករណី</b> · <b style="color:var(--primary-dark);">' + times + ' លើក</b>';
+}
+function enRedHtml(t){
+  t = String(t); const re = /\(?[A-Za-z][A-Za-z0-9 ().,\/&+\-'’:]*/g; let out = '', last = 0, m;
+  while((m = re.exec(t))){
+    const w = m[0].replace(/\s+$/, '');
+    out += esc(t.slice(last, m.index)) + '<span class="en-red">' + esc(w) + '</span>';
+    last = m.index + w.length; re.lastIndex = last;
+  }
+  return out + esc(t.slice(last));
+}
+/* Diagnosis stat card name: English (red) on the first line; Khmer on the line below.
+   Anything from a "(" onward always goes down to the Khmer line (never stays with the English line). */
+function dxNameHtml(t){
+  t = String(t);
+  const p = t.indexOf('(');
+  const head = p >= 0 ? t.slice(0, p) : t, tail = p >= 0 ? t.slice(p).trim() : '';
+  const re = /[A-Za-z][A-Za-z0-9 .,\/&+\-'’:]*/g, en = [];
+  let m;
+  while((m = re.exec(head))){ const w = m[0].replace(/\s+$/, ''); en.push(w); re.lastIndex = m.index + w.length; }
+  const kh = head.replace(re, ' ').replace(/^[\s·\-\/,:;]+|[\s·\-\/,:;]+$/g, '').replace(/\s{2,}/g, ' ');
+  const e = en.join(' ').trim();
+  const line2 = (kh ? esc(kh) : '') + (kh && tail ? ' ' : '') + (tail ? enRedHtml(tail) : '');
+  return (e ? '<span class="dx-en en-red">' + esc(e) + '</span> ' : '<span class="dx-en" aria-hidden="true"></span>') +
+         (line2 ? '<span class="dx-kh">' + line2 + '</span>' : '');
+}
 function renderClinicalNotesHTML(records) {
   const rows = [...records].sort((a,b)=> (parseAnyDate(b.timestamp)||0) - (parseAnyDate(a.timestamp)||0));
   return `
@@ -6208,7 +6273,7 @@ function renderClinicalNotesHTML(records) {
             <tr class="emr-tr" onclick="openDoDetail('${r._id}')">
               <td data-label="កាលបរិច្ឆេទ (Date)" class="mono" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;">${formatDateDisplay(r.timestamp).split(' ')[0]}</td>
               <td data-label="ធ្មេញ (Tooth)" class="mono" style="font-weight:800;color:var(--primary-dark);font-size:13px;">${r.teeth || '—'}</td>
-              <td data-label="ការព្យាបាល (Treatment)" class="kh" style="font-weight:700;color:var(--ink);font-size:13px;">${r.treatment || '—'}</td>
+              <td data-label="ការព្យាបាល (Treatment)" class="kh" style="font-weight:700;color:var(--ink);font-size:13px;">${r.treatment || '—'}${(() => { const n = stepsArray(r).filter(st => stepKind(st.name) !== 'appt').length; return n ? `<div class="tr-step-count kh">Step: ${n} លើក</div>` : ''; })()}</td>
               <td data-label="ស្ថានភាព (Status)" style="text-align:center;">
                 <div class="emr-status ${cls}" style="white-space:normal;line-height:1.4;">${esc(statusText)}</div>
               </td>
@@ -6324,7 +6389,7 @@ function openPatientRecord(name){
     <div class="emr-notes-section">
       <div class="emr-section-head kh">
         <span>📜 ប្រវត្តិព្យាបាល (Clinical Notes)</span>
-        <span style="font-size:11px; font-weight:600; color:var(--ink-dim); text-transform:none;">ចំនួនមកព្យាបាលសរុប: <b style="color:var(--primary-dark); font-size:13px;">${records.length} លើក</b></span>
+        <span style="font-size:11px; font-weight:600; color:var(--ink-dim); text-transform:none;">${visitSummaryHTML(records)}</span>
       </div>
       ${renderClinicalNotesHTML(records)}
     </div>
@@ -6391,7 +6456,7 @@ function buildPatientPrintHTML(latest, records, treatedTeethSet, realPhone, real
       <div class="ps-info-item"><div class="k">Sex / Age</div><div class="v">${realSex} / ${realAge}</div></div>
       <div class="ps-info-item"><div class="k">Registration Card</div><div class="v kh">${realType||latest.type||'បង់ពេញថ្លៃ'}</div></div>
       <div class="ps-info-item"><div class="k">Phone</div><div class="v">${realPhone||latest.phone||'—'}</div></div>
-      <div class="ps-info-item"><div class="k">Total visits</div><div class="v">${records.length}</div></div>
+      <div class="ps-info-item"><div class="k">Total cases</div><div class="v">${records.length}</div></div>
       <div class="ps-info-item"><div class="k">Teeth involved</div><div class="v">${treatedTeethSet.size} teeth</div></div>
       <div class="ps-info-item"><div class="k">Next Visit</div><div class="v mono">${formatDateDisplay(latest.timeLast||latest.doingDateTime||latest.timestamp)}</div></div>
     </div>
