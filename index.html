@@ -825,9 +825,18 @@
 
   .sb-foot{flex:none;padding:8px 10px 12px;border-top:1px solid var(--sb-line);}
   body:not(.lock-preview) #sbLockBtn{display:none;}
+  body.lock-preview #sbLogoutBtn{display:none;}
+  .sb-foot-row{display:flex;gap:6px;margin-top:2px;}
+  .sb-foot-row .sb-item{flex:1 1 0;min-width:0;width:auto;justify-content:center;}
+  #sbLogoutBtn{background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.5);border-radius:10px;color:#fff;}
+  #sbLogoutBtn:hover{background:rgba(239,68,68,.32);}
+  #sbLogoutBtn .sb-label{flex:none;color:#fff;font-weight:600;}
+  #sbLogoutBtn .sb-ico{color:#FCA5A5;stroke:#FCA5A5;}
+  body.sb-collapsed .sb-foot-row{flex-direction:column;}
   #sbSyncBtn{justify-content:center;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:10px;color:#fff;}
   #sbSyncBtn:hover{background:rgba(255,255,255,.18);}
-  #sbSyncBtn .sb-label{flex:none;color:#fff;font-weight:600;}
+  #sbSyncBtn .sb-label{flex:0 1 auto;min-width:0;color:#fff;font-weight:600;font-size:11px;line-height:1.25;text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;}
+  .sb-foot-row .sb-item{padding-left:8px !important;padding-right:8px !important;gap:6px;}
   .sb-clinic{padding:8px 12px 6px;font-size:12px;line-height:1.35;color:#E7F8EC;font-weight:600;text-align:center;}
   .sb-foot .sb-item{padding:8px 12px;font-size:12.5px;}
   .sb-foot .sb-ico{width:18px;height:18px;}
@@ -1848,9 +1857,9 @@ body .appt-row.sch-card{text-align:center;}
           <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>
           <span class="sb-label kh">ឃ្លាំងសម្ភារៈ-ឯកសារ<small>Inventory &amp; Documents</small></span><span class="sb-badge warn" id="sbBadgeInv" hidden>0</span>
         </button>
-        <button type="button" class="sb-item" id="settingsBtn" title="ការកំណត់គ្រប់គ្រង · Setting">
+        <button type="button" class="sb-item" id="settingsBtn" title="ការកំណត់ · Setting">
           <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span class="sb-label kh">ការកំណត់គ្រប់គ្រង<small>Setting</small></span>
+          <span class="sb-label kh">ការកំណត់<small>Setting</small></span>
         </button>
       </div>
     </nav>
@@ -1860,9 +1869,14 @@ body .appt-row.sch-card{text-align:center;}
       <button type="button" class="sb-item" id="sbLockBtn" title="ចាក់សោកម្មវិធី · Lock">
         <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span class="sb-label kh">ចាក់សោកម្មវិធី</span>
       </button>
+      <div class="sb-foot-row">
       <button type="button" class="sb-item" id="sbSyncBtn" title="ចុចដើម្បី Sync ទិន្នន័យជាមួយ Google Sheet">
         <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg><span class="sb-label kh" id="syncBadge">Sync</span>
       </button>
+      <button type="button" class="sb-item" id="sbLogoutBtn" title="ចាកចេញ · Log out" aria-label="Log out">
+        <svg class="sb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+      </div>
     </div>
     </div>
     <button type="button" class="sb-handle" id="sbCollapseBtn" title="បង្រួម / ពង្រីកម៉ឺនុយ" aria-label="បង្រួម / ពង្រីកម៉ឺនុយ" aria-pressed="false">
@@ -2621,7 +2635,6 @@ body .appt-row.sch-card{text-align:center;}
 
       <div class="modal-actions" style="margin-top: 15px;">
         <div class="left-action">
-          <button type="button" class="btn btn-outline btn-sm kh" onclick="resetOptionsToDefault()">🔄 លំនាំដើម (Default)</button>
           <button type="button" class="btn btn-outline btn-sm kh" id="listsSyncBtn" title="Sync ទៅ Google Sheet (Tab Setting-…)">☁️ Sync Sheet</button>
         </div>
         <button type="button" class="btn btn-primary btn-sm kh" id="saveListsSettingBtn">រួចរាល់ Done</button>
@@ -3388,14 +3401,6 @@ function removeCustomOption(idx) {
   appCustomLists[currentSettingTab].splice(idx, 1);
   saveCustomLists();
   renderOptionsList();
-}
-
-function resetOptionsToDefault() {
-  showConfirm('តើអ្នកពិតជាចង់កំណត់ជម្រើសទាំងអស់ទៅលំនាំដើមវិញមែនទេ?', () => {
-    appCustomLists = JSON.parse(JSON.stringify(DEFAULT_LISTS));
-    saveCustomLists();
-    renderOptionsList();
-  });
 }
 
 function populateAllSelectDropdowns() {
@@ -8881,6 +8886,7 @@ function renderShellMeta(){
     applySidebarCollapsed(!document.body.classList.contains('sb-collapsed'), true);
   });
   document.getElementById('sbLockBtn').addEventListener('click', ()=> lockApp(false));
+  document.getElementById('sbLogoutBtn').addEventListener('click', ()=> lockApp(false));   // Log out = return to the PIN lock screen
 
   // Sync button in the sidebar: clicking anywhere on it behaves like clicking the label (which owns the sync handlers)
   const syncLabel = document.getElementById('syncBadge');
